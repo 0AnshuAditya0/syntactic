@@ -11,36 +11,36 @@ export default function NewPostPage() {
   const { user, loading } = useAuth();
 
   useEffect(() => {
+    async function createNewDraft() {
+      try {
+        const { data, error } = await supabase
+          .from('posts')
+          .insert({
+            title: 'Untitled Post',
+            content: '',
+            author_id: user!.id,
+            slug: `untitled-${Date.now()}`, // Temporary slug
+            published: false,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          router.replace(`/editor/${data.id}`);
+        }
+      } catch (error: unknown) {
+        console.error('Error creating draft:', error);
+      }
+    }
+
     if (!loading && user) {
       createNewDraft();
     } else if (!loading && !user) {
       router.push('/auth/login');
     }
-  }, [user, loading]);
-
-  async function createNewDraft() {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .insert({
-          title: 'Untitled Post',
-          content: '',
-          author_id: user!.id,
-          slug: `untitled-${Date.now()}`, // Temporary slug
-          published: false,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        router.replace(`/editor/${data.id}`);
-      }
-    } catch (error) {
-      console.error('Error creating draft:', error);
-    }
-  }
+  }, [user, loading, router]);
 
   return (
     <div className="h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">

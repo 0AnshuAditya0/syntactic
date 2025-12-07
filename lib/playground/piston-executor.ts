@@ -65,11 +65,12 @@ export async function executePiston(
             error: data.run.stderr || undefined,
             executionTime,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to execute code';
         return {
             success: false,
             output: '',
-            error: error.message || 'Failed to execute code',
+            error: errorMessage,
             executionTime: Date.now() - startTime,
         };
     }

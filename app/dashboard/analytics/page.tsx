@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, FileText, Users, Heart } from 'lucide-react';
+import { Eye, FileText, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AnalyticsPage() {

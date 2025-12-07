@@ -30,27 +30,7 @@ export default function EditorPage() {
   const debouncedContent = useDebounce(content, 2000);
   const debouncedTitle = useDebounce(title, 1000);
 
-  useEffect(() => {
-    if (id === 'new') return;
-    fetchPost();
-  }, [id]);
-
-  // Auto-save when content changes
-  useEffect(() => {
-    if (post && debouncedContent !== post.content) {
-      const readingTime = calculateReadingTime(debouncedContent);
-      handleSave({ content: debouncedContent, reading_time: readingTime }, true);
-    }
-  }, [debouncedContent]);
-
-  // Auto-save when title changes
-  useEffect(() => {
-    if (post && debouncedTitle !== post.title && debouncedTitle.trim()) {
-      handleSave({ title: debouncedTitle }, true);
-    }
-  }, [debouncedTitle]);
-
-  async function fetchPost() {
+  const fetchPost = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -70,10 +50,10 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async function handleSave(updates: any = {}, isAutoSave = false) {
+  const handleSave = useCallback(async (updates: any = {}) => {
     if (!user || !post) return;
     setSaving(true);
 
@@ -99,7 +79,27 @@ export default function EditorPage() {
     } finally {
       setSaving(false);
     }
-  }
+  }, [id, post, user]);
+
+  useEffect(() => {
+    if (id === 'new') return;
+    fetchPost();
+  }, [id, fetchPost]);
+
+  // Auto-save when content changes
+  useEffect(() => {
+    if (post && debouncedContent !== post.content) {
+      const readingTime = calculateReadingTime(debouncedContent);
+      handleSave({ content: debouncedContent, reading_time: readingTime });
+    }
+  }, [debouncedContent, post, handleSave]);
+
+  // Auto-save when title changes
+  useEffect(() => {
+    if (post && debouncedTitle !== post.title && debouncedTitle.trim()) {
+      handleSave({ title: debouncedTitle });
+    }
+  }, [debouncedTitle, post, handleSave]);
 
   async function handlePublish() {
     if (!post) return;

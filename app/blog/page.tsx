@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 
 interface BlogPost {
@@ -69,20 +70,25 @@ export default async function BlogPage() {
               >
                 {post.cover_image && (
                   <Link href={`/post/${post.slug}`}>
-                    <img
-                      src={post.cover_image}
-                      alt={post.title}
-                      className="w-full h-48 object-cover rounded-xl mb-4 border-2 border-gray-200 dark:border-gray-700"
-                    />
+                    <div className="relative w-full h-48 mb-4">
+                      <Image
+                        src={post.cover_image}
+                        alt={post.title}
+                        fill
+                        className="object-cover rounded-xl border-2 border-gray-200 dark:border-gray-700"
+                      />
+                    </div>
                   </Link>
                 )}
                 
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
                   {post.profiles?.avatar_url ? (
-                    <img
+                    <Image
                       src={post.profiles.avatar_url}
-                      alt={post.profiles.display_name || post.profiles.username}
-                      className="w-10 h-10 rounded-full border-2 border-[#F29F67]"
+                      alt={post.profiles.display_name || post.profiles.username || 'User'}
+                      width={40}
+                      height={40}
+                      className="rounded-full border-2 border-[#F29F67]"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-[#F29F67] flex items-center justify-center text-[#1E1E2C] font-bold border-2 border-[#F29F67]">
