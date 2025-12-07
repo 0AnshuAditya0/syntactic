@@ -76,7 +76,7 @@ export default function PlaygroundPage() {
     handleClear();
   };
 
-  const handleSaved = (fileId: string) => {
+  const handleSaved = () => {
     setShowSaveDialog(false);
     alert('File saved successfully!');
   };

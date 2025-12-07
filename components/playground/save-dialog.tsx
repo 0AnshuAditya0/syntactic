@@ -33,7 +33,7 @@ export function SaveDialog({ code, language, onSaved }: SaveDialogProps) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const fileData: any = {
+      const fileData: Record<string, unknown> = {
         filename: filename.trim(),
         language,
         code,
@@ -62,8 +62,12 @@ export function SaveDialog({ code, language, onSaved }: SaveDialogProps) {
       if (saveError) throw saveError;
 
       onSaved(data.id);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save file');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to save file');
+      }
     } finally {
       setSaving(false);
     }

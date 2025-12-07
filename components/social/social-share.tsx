@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button';
 interface SocialShareProps {
   url: string;
   title: string;
-  description?: string;
 }
 
-export function SocialShare({ url, title, description }: SocialShareProps) {
+export function SocialShare({ url, title }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 

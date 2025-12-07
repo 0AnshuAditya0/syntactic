@@ -3,7 +3,8 @@
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AvatarUploadProps {
@@ -49,8 +50,12 @@ export function AvatarUpload({ url, onUpload }: AvatarUploadProps) {
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       
       onUpload(data.publicUrl);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     } finally {
       setUploading(false);
     }
@@ -61,10 +66,11 @@ export function AvatarUpload({ url, onUpload }: AvatarUploadProps) {
       <div className="relative group">
         <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
           {url ? (
-            <img
+            <Image
               src={url}
               alt="Avatar"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-400">

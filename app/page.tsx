@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { ArrowRight, Code2 } from 'lucide-react';
 
 export default function HomePage() {
@@ -203,7 +202,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex">
                       <span className="text-gray-400 w-8 select-none">5</span>
-                      <span className="text-gray-500 ml-4">// Execute</span>
+                      <span className="text-gray-500 ml-4">{`// Execute`}</span>
                     </div>
                     <div className="flex">
                       <span className="text-gray-400 w-8 select-none">6</span>
@@ -213,7 +212,7 @@ export default function HomePage() {
                       <span className="text-gray-700">(</span>
                       <span className="text-blue-600">greet</span>
                       <span className="text-gray-700">(</span>
-                      <span className="text-green-600">"Developer"</span>
+                      <span className="text-green-600">&quot;Developer&quot;</span>
                       <span className="text-gray-700">));</span>
                     </div>
                     
