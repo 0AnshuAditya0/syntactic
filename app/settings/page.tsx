@@ -107,8 +107,12 @@ export default function SettingsPage() {
 
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -132,8 +136,12 @@ export default function SettingsPage() {
 
       setMessage('Preferences updated successfully!');
       setTimeout(() => setMessage(''), 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -315,7 +323,7 @@ export default function SettingsPage() {
                       <select
                         id="editor_theme"
                         value={preferencesForm.editor_theme}
-                        onChange={(e) => setPreferencesForm({ ...preferencesForm, editor_theme: e.target.value as any })}
+                        onChange={(e) => setPreferencesForm({ ...preferencesForm, editor_theme: e.target.value })}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <option value="vs-dark">VS Dark</option>
@@ -345,7 +353,7 @@ export default function SettingsPage() {
                       <select
                         id="reading_mode"
                         value={preferencesForm.reading_mode}
-                        onChange={(e) => setPreferencesForm({ ...preferencesForm, reading_mode: e.target.value as any })}
+                        onChange={(e) => setPreferencesForm({ ...preferencesForm, reading_mode: e.target.value })}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <option value="light">Light</option>

@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
             ...result,
             remaining: rateLimit.remaining,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Execution error:', error);
         return NextResponse.json(
-            { error: 'Failed to execute code', details: error.message },
+            { error: 'Failed to execute code', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
         );
     }

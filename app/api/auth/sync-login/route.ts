@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
             },
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Sync login error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },

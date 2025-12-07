@@ -136,7 +136,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
               {/* MDX Content */}
               <div className="prose prose-lg dark:prose-invert max-w-none mb-16">
-                <MDXContent content={post.content} />
+                <MDXContent source={post.content} />
               </div>
 
               {/* Comments Section */}

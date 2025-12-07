@@ -9,18 +9,31 @@ interface SearchPageProps {
   };
 }
 
+interface SearchPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  published_at?: string;
+  profiles?: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = searchParams.q || '';
   const supabase = await createClient();
 
-  let posts: any[] = [];
+  let posts: SearchPost[] = [];
   
   if (query) {
     const { data } = await supabase.rpc('search_posts', { search_query: query });
     
     // Fetch author details for the results (since RPC returns raw posts)
     if (data && data.length > 0) {
-      const postIds = data.map((p: any) => p.id);
+      const postIds = data.map((p: { id: string }) => p.id);
       const { data: postsWithAuthors } = await supabase
         .from('posts')
         .select(`
@@ -34,7 +47,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         .in('id', postIds)
         .eq('published', true);
         
-      posts = postsWithAuthors || [];
+      if (postsWithAuthors) {
+        posts = postsWithAuthors as unknown as SearchPost[];
+      }
     }
   }
 
@@ -70,7 +85,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     )}
                     <span>{post.profiles?.display_name || post.profiles?.username}</span>
                   </div>
-                  <span>{formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}</span>
+                  {post.published_at && (
+                    <span>{formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}</span>
+                  )}
                 </div>
               </Link>
             ))

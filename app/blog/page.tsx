@@ -2,11 +2,28 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  cover_image?: string;
+  published_at?: string;
+  reading_time?: number;
+  view_count?: number;
+  tags?: string[];
+  profiles?: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
+}
+
 export default async function BlogPage() {
   const supabase = await createClient();
   
   // Fetch published posts
-  const { data: posts, error } = await supabase
+  const { data: rawPosts, error } = await supabase
     .from('posts')
     .select(`
       *,
@@ -19,6 +36,8 @@ export default async function BlogPage() {
     .eq('published', true)
     .order('published_at', { ascending: false })
     .limit(20);
+
+  const posts = rawPosts as unknown as BlogPost[];
 
   if (error) {
     console.error('Error fetching posts:', error);
@@ -43,7 +62,7 @@ export default async function BlogPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post: any) => (
+            {posts.map((post) => (
               <article
                 key={post.id}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-lg transition-shadow p-6 border-2 border-gray-300 dark:border-gray-700"

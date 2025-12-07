@@ -4,18 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SignupForm } from '@/components/auth/signup-form';
 import { PrivateKeyDisplay } from '@/components/auth/private-key-display';
-import { supabase } from '@/lib/supabase/client';
+
 
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'key'>('form');
   const [privateKey, setPrivateKey] = useState('');
-  const [userId, setUserId] = useState('');
+
   const [username, setUsername] = useState('');
 
-  function handleSignupSuccess(key: string, id: string) {
+  function handleSignupSuccess(key: string) {
     setPrivateKey(key);
-    setUserId(id);
+
     
     // Extract username from form (we'll need to pass it)
     const usernameInput = document.querySelector<HTMLInputElement>('input[id="username"]');

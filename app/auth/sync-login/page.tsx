@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase/client';
+
 import { Smartphone, Key } from 'lucide-react';
 
 export default function SyncLoginPage() {
-  const router = useRouter();
+
   const [username, setUsername] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,8 +43,8 @@ export default function SyncLoginPage() {
       // Fallback (should not happen with new API)
       throw new Error('No redirect URL received');
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ export default function SyncLoginPage() {
 
           <div className="space-y-3 pt-4 border-t">
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <a href="/auth/signup" className="text-primary hover:underline">
                 Sign up
               </a>

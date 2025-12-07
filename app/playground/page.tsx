@@ -57,8 +57,9 @@ export default function PlaygroundPage() {
         setError(result.error);
         setExecutionTime(result.executionTime);
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
     } finally {
       setIsRunning(false);
     }
@@ -80,7 +81,12 @@ export default function PlaygroundPage() {
     alert('File saved successfully!');
   };
 
-  const handleFileSelect = (file: any) => {
+  interface FileItem {
+    language: Language;
+    code: string;
+  }
+
+  const handleFileSelect = (file: FileItem) => {
     setLanguage(file.language);
     setCode(file.code);
     setShowFileTree(false);
