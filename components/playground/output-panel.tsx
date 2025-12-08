@@ -60,7 +60,7 @@ export function OutputPanel({ output, error, executionTime, isRunning, onClear }
           </div>
         ) : (
           <div className="text-muted-foreground">
-            Click "Run" or press Ctrl+Enter to execute your code
+            Click &quot;Run&quot; or press Ctrl+Enter to execute your code
           </div>
         )}
       </div>

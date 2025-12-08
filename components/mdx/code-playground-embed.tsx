@@ -54,8 +54,10 @@ export function CodePlaygroundEmbed({ initialCode, language, readOnly = false }:
         setError(result.error);
         setExecutionTime(result.executionTime);
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err) {
+      // Fixed: Properly type the error
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
     } finally {
       setIsRunning(false);
     }

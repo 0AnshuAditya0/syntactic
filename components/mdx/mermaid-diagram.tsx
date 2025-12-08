@@ -26,9 +26,11 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         const { svg } = await mermaid.render(id, chart);
         setSvg(svg);
         setError('');
-      } catch (err: any) {
+      } catch (err) {
+        // Fixed: Properly type the error
         console.error('Mermaid rendering error:', err);
-        setError('Failed to render diagram');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to render diagram';
+        setError(errorMessage);
       }
     };
 

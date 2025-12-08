@@ -1,19 +1,22 @@
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import rehypePrism from 'rehype-prism-plus';
 import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
 import { CodeBlock } from './code-block';
 import { Callout } from './callout';
 import { CodePlaygroundEmbed } from './code-playground-embed';
 import { MermaidDiagram } from './mermaid-diagram';
-import { mdxSanitizationSchema } from '@/lib/mdx/sanitizer';
+import type { MDXComponents } from 'mdx/types';
+import type { ComponentProps } from 'react';
 
 interface MDXContentProps {
   source: string;
 }
 
-const components = {
-  pre: CodeBlock,
+const components: MDXComponents = {
+  pre: (props: ComponentProps<'pre'>) => {
+    const { children, className, ...rest } = props;
+    return <CodeBlock children={children} className={className} {...rest} />;
+  },
   Callout,
   CodePlaygroundEmbed,
   MermaidDiagram,
@@ -23,9 +26,8 @@ const options = {
   mdxOptions: {
     remarkPlugins: [remarkGfm],
     rehypePlugins: [
-      // [rehypeSanitize, mdxSanitizationSchema],
       [rehypePrism, { ignoreMissing: true }],
-    ] as any,
+    ],
   },
 };
 
