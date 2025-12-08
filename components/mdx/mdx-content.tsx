@@ -15,7 +15,7 @@ interface MDXContentProps {
 const components: MDXComponents = {
   pre: (props: ComponentProps<'pre'>) => {
     const { children, className, ...rest } = props;
-    return <CodeBlock children={children} className={className} {...rest} />;
+    return <CodeBlock className={className} {...rest}>{children}</CodeBlock>;
   },
   Callout,
   CodePlaygroundEmbed,
