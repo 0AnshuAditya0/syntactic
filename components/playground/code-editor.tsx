@@ -14,7 +14,7 @@ interface CodeEditorProps {
 export function CodeEditor({ value, onChange, language, onRun }: CodeEditorProps) {
   const { theme } = useTheme();
   
-  const handleEditorMount: OnMount = (editor) => {
+  const handleEditorMount: OnMount = (editor, monaco) => {
     // Add keyboard shortcut for running code (Ctrl+Enter)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       onRun();
