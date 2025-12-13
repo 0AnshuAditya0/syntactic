@@ -5,9 +5,11 @@ interface OutputPanelProps {
   output: string;
   error?: string;
   onClear: () => void;
+  executionTime?: number;
+  isRunning?: boolean;
 }
 
-export function OutputPanel({ output, error, onClear }: OutputPanelProps) {
+export function OutputPanel({ output, error, onClear, executionTime, isRunning }: OutputPanelProps) {
   
   const handleCopy = () => {
     const text = error ? `${error}\n${output}` : output;
@@ -19,7 +21,14 @@ export function OutputPanel({ output, error, onClear }: OutputPanelProps) {
   return (
     <div className="h-full flex flex-col transition-colors duration-200">
       <div className="h-10 flex items-center justify-between px-4 border-b border-inherit">
-        <span className="text-xs font-medium opacity-60 uppercase tracking-wider text-inherit">Output</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium opacity-60 uppercase tracking-wider text-inherit">Output</span>
+          {executionTime !== undefined && (
+            <span className="text-xs opacity-40 font-mono">
+              ({executionTime}ms)
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -43,7 +52,12 @@ export function OutputPanel({ output, error, onClear }: OutputPanelProps) {
       </div>
 
       <div className="flex-1 overflow-auto p-4 font-mono text-[13px] leading-relaxed">
-        {!hasContent ? (
+        {isRunning ? (
+           <div className="h-full flex flex-col items-center justify-center opacity-40 gap-3 select-none">
+             <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+             <p>Executing...</p>
+           </div>
+        ) : !hasContent ? (
           <div className="h-full flex flex-col items-center justify-center opacity-40 gap-3 select-none">
             <Play className="w-8 h-8" />
             <p>Click &apos;Run&apos; or press Ctrl+Enter to execute</p>
