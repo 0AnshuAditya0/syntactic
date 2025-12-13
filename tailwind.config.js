@@ -79,9 +79,13 @@ module.exports = {
   				'sans-serif'
   			],
   			mono: [
-  				'var(--font-fira-code)',
+  				'var(--font-space-mono)',
   				'monospace'
-  			]
+  			],
+			cursive: [
+				'var(--font-dancing)',
+				'cursive'
+			]
   		},
   		keyframes: {
   			'accordion-down': {

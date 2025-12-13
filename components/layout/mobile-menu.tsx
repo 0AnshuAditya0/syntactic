@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 
 export function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, tempUser, signOut } = useAuth();
+  
+  const effectiveUser = user || tempUser;
+  // Use profile for name if available, otherwise tempUser username/email, else 'User'
+  const displayName = profile?.username || tempUser?.username || effectiveUser?.email?.split('@')[0] || 'User';
 
   const closeMenu = () => setIsOpen(false);
 
@@ -58,18 +62,18 @@ export function MobileMenu() {
             </button>
           </div>
 
-          {/* User Section */}
-          {user && profile && (
+          {/* User Section - Show for both OAuth and Temp users */}
+          {effectiveUser && (
             <div className="p-4 border-b-2 border-[#F29F67]/20">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-[#F29F67] flex items-center justify-center">
                   <span className="text-[#1E1E2C] text-sm font-bold">
-                    {profile.username.charAt(0).toUpperCase()}
+                    {displayName.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <p className="text-white font-medium">{profile.username}</p>
-                  <p className="text-white/60 text-sm">{profile.display_name || 'User'}</p>
+                  <p className="text-white font-medium truncate max-w-[150px]">{displayName}</p>
+                  <p className="text-white/60 text-xs truncate max-w-[150px]">{effectiveUser.email}</p>
                 </div>
               </div>
             </div>
@@ -109,7 +113,7 @@ export function MobileMenu() {
               </Link>
             </div>
 
-            {user && profile && (
+            {effectiveUser && (
               <>
                 <div className="my-4 border-t-2 border-[#F29F67]/20"></div>
                 <div className="space-y-2">
@@ -121,22 +125,27 @@ export function MobileMenu() {
                     <PenSquare className="w-4 h-4" />
                     <span>Write</span>
                   </Link>
-                  <Link
-                    href={`/profile/${profile.username}`}
-                    onClick={closeMenu}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
-                  </Link>
-                  <Link
-                    href="/settings"
-                    onClick={closeMenu}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </Link>
+                  
+                  {user && ( // Only show Profile/Settings for OAuth users
+                    <>
+                      <Link
+                        href={`/profile/${displayName}`}
+                        onClick={closeMenu}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Profile</span>
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={closeMenu}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>Settings</span>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -144,7 +153,7 @@ export function MobileMenu() {
 
           {/* Footer */}
           <div className="p-4 border-t-2 border-[#F29F67]/20">
-            {user && profile ? (
+            {effectiveUser ? (
               <button
                 onClick={() => {
                   signOut();

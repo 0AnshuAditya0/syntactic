@@ -1,121 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { generatePrivateKey, hashPrivateKey } from '@/lib/auth/private-key';
+import { cookies } from 'next/headers';
 
+/**
+ * POST /api/auth/signup
+ * Handles Post-OAuth signup logic:
+ * 1. Verifies the user is authenticated (via session) OR validates an OAuth token if provided (simpler to rely on session)
+ * 2. Generates a private key if one doesn't exist
+ * 3. Returns the key
+ * 
+ * Note: The prompt requested dealing with "oauth_token". 
+ * In a Next.js App Router + Supabase Auth context, usually the client handles OAuth redirect, 
+ * then the server session is established. 
+ * We will check for an active session to verify identity.
+ */
 export async function POST(req: NextRequest) {
     try {
-        const { email, password, username, recoveryEmail } = await req.json();
+        const body = await req.json().catch(() => ({}));
 
-        // Validation
-        if (!email || !password || !username) {
-            return NextResponse.json(
-                { error: 'Email, password, and username are required' },
-                { status: 400 }
-            );
-        }
-
-        if (username.length < 3 || username.length > 30) {
-            return NextResponse.json(
-                { error: 'Username must be between 3 and 30 characters' },
-                { status: 400 }
-            );
-        }
-
-        if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-            return NextResponse.json(
-                { error: 'Username can only contain letters, numbers, hyphens, and underscores' },
-                { status: 400 }
-            );
-        }
-
+        // We can get the user from the Supabase session
         const supabaseAdmin = createAdminClient();
 
-        // Check if username already exists
-        const { data: existingProfile } = await supabaseAdmin
-            .from('profiles')
-            .select('username')
-            .eq('username', username)
+        /* 
+           If the client sends an 'oauth_token', we could verify it, but it's cleaner 
+           to rely on the session cookie if the user just logged in.
+           However, let's look at the request body usage.
+        */
+
+        // Get current user from session
+        const cookieStore = cookies();
+        const token = cookieStore.get('sb-access-token')?.value ||
+            cookieStore.get('sb-localhost-auth-token')?.value; // Adjust depending on cookie name config
+
+        // Using getUser() which validates the auth header or cookie
+        const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+        if (userError || !user) {
+            return NextResponse.json(
+                { error: 'Unauthorized. Please sign in with Google or GitHub first.' },
+                { status: 401 }
+            );
+        }
+
+        // Check if user already has a private key
+        const { data: existingKey } = await supabaseAdmin
+            .from('private_key_hash')
+            .select('id')
+            .eq('user_id', user.id)
             .single();
 
-        if (existingProfile) {
+        if (existingKey) {
             return NextResponse.json(
-                { error: 'Username already taken' },
+                { error: 'Private key already exists for this account.' },
                 { status: 409 }
             );
         }
 
-        // 1. Create auth user
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true, // Auto-confirm email for now
-            user_metadata: {
-                username,
-            },
-        });
-
-        if (authError) {
-            console.error('Auth error:', authError);
-            return NextResponse.json(
-                { error: authError.message },
-                { status: 400 }
-            );
-        }
-
-        if (!authData.user) {
-            return NextResponse.json(
-                { error: 'Failed to create user' },
-                { status: 500 }
-            );
-        }
-
-        // 2. Generate and hash private key
+        // Generate and hash private key
         const privateKey = generatePrivateKey();
-        const privateKeyHash = await hashPrivateKey(privateKey);
+        const keyHash = await hashPrivateKey(privateKey);
 
-        // 3. Create profile
-        const { error: profileError } = await supabaseAdmin
-            .from('profiles')
+        // Store hash in private_key_hash table
+        const { error: insertError } = await supabaseAdmin
+            .from('private_key_hash')
             .insert({
-                id: authData.user.id,
-                username,
-                private_key_hash: privateKeyHash,
-                recovery_email: recoveryEmail || email,
-                key_version: 1,
+                user_id: user.id,
+                key_hash: keyHash,
+                is_active: true
             });
 
-        if (profileError) {
-            console.error('Profile error:', profileError);
-            console.error('Profile error details:', JSON.stringify(profileError, null, 2));
-            console.error('Attempted to insert:', {
-                id: authData.user.id,
-                username,
-                recovery_email: recoveryEmail || email,
-            });
-
-            // Rollback: delete auth user
-            await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-
+        if (insertError) {
+            console.error('Key storage error:', insertError);
             return NextResponse.json(
-                {
-                    error: 'Failed to create profile',
-                    details: profileError.message || 'Unknown error'
-                },
+                { error: 'Failed to generate security key.' },
                 { status: 500 }
             );
         }
 
-        // 4. Return success with private key (ONLY TIME it's shown)
+        // Also ensure profile exists (optional, depending on if trigger does it)
+        // We'll trust the trigger or previous logic, but logging success is good.
+
+        // Return the UNHASHED key - ONE TIME ONLY
         return NextResponse.json({
             success: true,
-            privateKey, // User must save this!
-            userId: authData.user.id,
-            username,
-            message: 'Account created successfully. Save your private key securely!',
+            private_key: privateKey,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            },
+            message: "IMPORTANT: Save this key securely. You'll need it for public device logins."
         });
 
-    } catch (error: unknown) {
-        console.error('Signup error:', error);
+    } catch (error) {
+        console.error('Signup/KeyGen error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

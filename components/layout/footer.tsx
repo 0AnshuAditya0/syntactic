@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Github, Twitter } from 'lucide-react';
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 
+import { siteConfig } from '@/config/site';
+
 export function Footer() {
   return (
     <footer className="relative bg-[#F5F5F7] border-t-2 border-[#F29F67]/20 overflow-hidden">
@@ -19,19 +21,32 @@ export function Footer() {
                 </div>
               </div>
               <span className="text-[#1E1E2C] text-base sm:text-lg font-bold">
-                Syntactic
+                {siteConfig.name}
               </span>
             </Link>
             <p className="text-sm text-gray-700">
-              The modern platform for developer blogging and code sharing.
+              {siteConfig.description}
             </p>
             <div className="flex items-center gap-4">
-              <Link href="#" className="text-gray-700 hover:text-[#F29F67] transition-colors">
+              <Link 
+                href={siteConfig.links.github} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-gray-700 hover:text-[#F29F67] transition-colors"
+                aria-label="GitHub"
+              >
                 <Github className="w-5 h-5" />
               </Link>
-              <Link href="#" className="text-gray-700 hover:text-[#F29F67] transition-colors">
+              <Link 
+                href={siteConfig.links.twitter} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-gray-700 hover:text-[#F29F67] transition-colors"
+                aria-label="Twitter"
+              >
                 <Twitter className="w-5 h-5" />
               </Link>
+              {/* Added accessibility labels and external link security attributes */}
             </div>
           </div>
 
@@ -62,8 +77,8 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="mt-12 pt-8 border-t-2 border-[#F29F67]/20 text-center text-sm text-gray-700">
-          © {new Date().getFullYear()} Syntactic. All rights reserved.
+        <div className="mt-12 pt-8 border-t-2 border-[#F29F67]/20 flex flex-col items-center gap-2 text-sm text-gray-700">
+          <p>© {new Date().getFullYear()} Syntactic. All rights reserved.</p>
         </div>
       </div>
     </footer>

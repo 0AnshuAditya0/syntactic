@@ -111,7 +111,7 @@ export default function ProfilePage() {
   const isOwnProfile = currentUser?.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">

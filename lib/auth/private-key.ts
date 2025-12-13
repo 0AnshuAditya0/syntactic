@@ -2,18 +2,29 @@ import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
 
 /**
- * Generate a secure 32-character private key
- * Uses alphanumeric characters (a-z, A-Z, 0-9)
+ * Generate a secure private key with format SYNT-XXXX-XXXX-XXXX-XXXX
+ * Total 5 groups: 1 prefix + 4 random groups of 4 chars
+ * Uses alphanumeric characters (A-Z, 0-9) - Uppercase only for readability as per requirements
  */
 export function generatePrivateKey(): string {
-    const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    const nanoid = customAlphabet(alphabet, 32);
-    return nanoid();
+    // Alphanumeric uppercase: A-Z, 0-9
+    // Removing confusing characters like I, O, 0, 1 if we wanted, but prompt said "A-Z, 0-9"
+    // Prompt Example: SYNT-A7K9-B2X4-M8P1-Q5R3
+    const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const nanoid = customAlphabet(alphabet, 4);
+
+    // Generate 4 groups of 4 characters
+    const p1 = nanoid();
+    const p2 = nanoid();
+    const p3 = nanoid();
+    const p4 = nanoid();
+
+    return `SYNT-${p1}-${p2}-${p3}-${p4}`;
 }
 
 /**
  * Hash a private key for secure storage
- * Uses bcrypt with 12 rounds (recommended for passwords)
+ * Uses bcrypt with 12 rounds
  */
 export async function hashPrivateKey(key: string): Promise<string> {
     const salt = await bcrypt.genSalt(12);
@@ -28,17 +39,26 @@ export async function verifyPrivateKey(key: string, hash: string): Promise<boole
 }
 
 /**
- * Format private key for display (groups of 8 characters)
- * Example: "AbCd1234" -> "AbCd-1234-EfGh-5678-IjKl-9012-MnOp-3456"
+ * Validate private key format
+ * Must match SYNT-XXXX-XXXX-XXXX-XXXX
  */
-export function formatPrivateKey(key: string): string {
-    return key.match(/.{1,4}/g)?.join('-') || key;
+export function isValidPrivateKeyFormat(key: string): boolean {
+    // Match SYNT- followed by 4 groups of 4 alphanumeric chars
+    return /^SYNT(-[A-Z0-9]{4}){4}$/.test(key);
 }
 
 /**
- * Validate private key format
- * Must be exactly 32 alphanumeric characters
+ * Helper to mask key for display if needed (e.g. SYNT-XXXX...Q5R3)
  */
-export function isValidPrivateKeyFormat(key: string): boolean {
-    return /^[a-zA-Z0-9]{32}$/.test(key);
+export function maskPrivateKey(key: string): string {
+    if (!key) return '';
+    return key.substring(0, 9) + '****-****-****-' + key.substring(key.length - 4);
+}
+
+/**
+ * Format private key for display
+ * Currently a pass-through as keys are stored/generated in the correct format
+ */
+export function formatPrivateKey(key: string): string {
+    return key;
 }

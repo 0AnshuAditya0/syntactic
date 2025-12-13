@@ -54,15 +54,15 @@
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account ([create one here](https://supabase.com))
-- Cloudflare Turnstile account (for CAPTCHA)
-- Sentry account (for error monitoring, optional)
+- Supabase account
+- Cloudflare Turnstile account
+- Sentry account (optional)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/syntactic.git
+   git clone https://github.com/0anshuaditya0/syntactic.git
    cd syntactic
    ```
 
@@ -79,20 +79,9 @@
    Fill in your Supabase credentials and other API keys in `.env.local`
 
 4. **Setup Supabase**
-   
-   a. Create a new Supabase project
-   
-   b. Run the complete database schema (see `docs/database-schema.sql`)
-   
-   c. Create storage buckets:
-      - `avatars` (public, 2MB limit, images only)
-      - `post-images` (public, 5MB limit, images only)
-      - `code-files` (private, 1MB limit)
-   
-   d. Setup scheduled job for cleanup:
-      - Name: `cleanup-expired-files`
-      - Schedule: Every hour (`0 * * * *`)
-      - SQL: `DELETE FROM public.code_files WHERE expires_at < NOW() AND user_id IS NULL;`
+   - Create a new Supabase project
+   - Run the complete database schema
+   - Create required storage buckets and scheduled jobs
 
 5. **Run the development server**
    ```bash
@@ -100,7 +89,6 @@
    ```
 
 6. **Open your browser**
-   
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📁 Project Structure
@@ -149,8 +137,8 @@ syntactic/
 - **Language**: TypeScript 5.3+
 - **Styling**: TailwindCSS + shadcn/ui
 - **Animations**: Framer Motion
-- **Code Editor**: Monaco Editor (VS Code engine)
-- **MDX**: next-mdx-remote + remark/rehype plugins
+- **Code Editor**: Monaco Editor
+- **MDX**: next-mdx-remote
 
 ### Backend & Database
 - **Database**: Supabase (PostgreSQL)
@@ -165,42 +153,7 @@ syntactic/
 ### Security & Monitoring
 - **CAPTCHA**: Cloudflare Turnstile
 - **Error Monitoring**: Sentry
-- **Sanitization**: DOMPurify (isomorphic)
-
-## 🔐 Security
-
-This project implements enterprise-grade security measures:
-
-- ✅ **Worker thread isolation** for JavaScript execution (no `eval()`)
-- ✅ **MDX sanitization** to prevent XSS attacks
-- ✅ **Rate limiting** on code execution
-- ✅ **CAPTCHA** for anonymous users
-- ✅ **File size validation** on client and server
-- ✅ **Row Level Security** (RLS) policies on all tables
-- ✅ **Private key hashing** with bcrypt (12 rounds)
-- ✅ **Environment variable protection**
-
-See [security-guidelines.md](./docs/security-guidelines.md) for detailed security documentation.
-
-## 📚 Documentation
-
-- [Implementation Plan](./docs/implementation-plan.md)
-- [Security Guidelines](./docs/security-guidelines.md)
-- [Database Schema](./docs/database-schema.sql)
-- [API Documentation](./docs/api.md) (coming soon)
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test suite
-npm test -- lib/auth/private-key.test.ts
-
-# Run with coverage
-npm test -- --coverage
-```
+- **Sanitization**: DOMPurify
 
 ## 🚢 Deployment
 
@@ -211,46 +164,15 @@ npm test -- --coverage
 3. Add environment variables
 4. Deploy!
 
-### Environment Variables for Production
-
-Make sure to set these in your Vercel project settings:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (for Admin API)
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
-- `TURNSTILE_SECRET_KEY`
-- `SENTRY_DSN`
-- `NEXT_PUBLIC_SENTRY_DSN`
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) first.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React framework
-- [Supabase](https://supabase.com/) - Open source Firebase alternative
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - VS Code's editor
-- [Piston](https://github.com/engineer-man/piston) - Code execution engine
-- [shadcn/ui](https://ui.shadcn.com/) - Beautiful UI components
-- [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) - Privacy-first CAPTCHA
+This project is licensed under the MIT License.
 
 ## 📧 Contact
 
-- Website: [syntactic.dev](https://syntactic.dev)
-- Twitter: [@syntactic_dev](https://twitter.com/syntactic_dev)
-- Email: hello@syntactic.dev
+- Website: [syntactic.vercel.app](https://syntactic.vercel.app/)
+- Twitter: [@AnshuAd43072185](https://x.com/AnshuAd43072185)
+- LinkedIn: [Anshu Aditya](https://linkedin.com/in/0anshuaditya)
 
 ---
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -14,6 +15,7 @@ const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 export function LoadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string | undefined>();
+  const pathname = usePathname();
 
   const setLoading = (loading: boolean) => {
     setIsLoading(loading);
@@ -22,18 +24,39 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Automatic Page Transition on Route Change
+  useEffect(() => {
+    // When path changes, we force loading to be true (if it wasn't already)
+    // and then fade it out after a delay.
+    setIsLoading(true);
+    
+    // Smooth transition out
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500); // 500ms delay as requested
+
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   return (
     <LoadingContext.Provider value={{ isLoading, setLoading, loadingMessage, setLoadingMessage }}>
       {children}
+      {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4 min-w-[200px]">
-            <div className="w-12 h-12 border-4 border-[#F29F67] border-t-transparent rounded-full animate-spin"></div>
-            {loadingMessage && (
-              <p className="text-[#1E1E2C] dark:text-white font-medium text-center">
-                {loadingMessage}
-              </p>
-            )}
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
+          <div className="flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500">
+             {/* Cat Animation Container */}
+            <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 bg-white/5 backdrop-blur-sm">
+              <img 
+                src="/cat_ani.gif" 
+                alt="Loading..." 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Optional Loading Text if message is present, or default */}
+            <p className="text-white text-lg font-medium tracking-wide animate-pulse">
+              {loadingMessage || 'Loading...'}
+            </p>
           </div>
         </div>
       )}

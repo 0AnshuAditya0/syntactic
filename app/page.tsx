@@ -251,6 +251,10 @@ export default function HomePage() {
                 Get Started Free
               </button>
             </Link>
+
+            <div className="mt-12">
+              <p className="font-cursive font-bold text-lg text-[#F29F67] opacity-80 hover:opacity-100 transition-opacity">dev &lt;Anshu&gt;</p>
+            </div>
           </div>
         </div>
       </section>

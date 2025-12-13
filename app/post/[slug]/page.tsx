@@ -139,6 +139,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 <MDXContent source={post.content} />
               </div>
 
+
               {/* Comments Section */}
               <div className="mt-16 pt-16 border-t-2 border-gray-300 dark:border-gray-700">
                 <CommentList postId={post.id} />
