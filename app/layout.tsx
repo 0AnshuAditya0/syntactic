@@ -1,5 +1,6 @@
 import 'prismjs/themes/prism-tomorrow.css';
 import './globals.css';
+import React from 'react';
 import type { Metadata } from 'next';
 import { Space_Mono, Raleway, Poppins, Dancing_Script } from 'next/font/google';
 import { Header } from '@/components/layout/header';
@@ -79,7 +80,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
             <LoadingProvider>
-              <Header />
+              <React.Suspense fallback={<div className="h-20" />}>
+                <Header />
+              </React.Suspense>
               {children}
               <Footer />
               <Toaster position="top-center" richColors />

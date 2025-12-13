@@ -16,7 +16,7 @@ import { siteConfig } from '@/config/site';
 
 export function Header() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
   const router = useRouter(); // Kept if needed elsewhere
   const { user, profile, tempUser, userType, signOut } = useAuth();
   const { setLoading } = useLoading();
