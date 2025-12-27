@@ -1,72 +1,38 @@
 export type Language = 'javascript' | 'typescript' | 'python' | 'java' | 'cpp' | 'c' | 'go' | 'rust';
 
 export const templates: Record<Language, string> = {
-    javascript: `// JavaScript Example
+    javascript: `// follow me on github www.github.com/0AnshuAditya0
 console.log("Hello, World!");
+`,
 
-// Try some code
-const numbers = [1, 2, 3, 4, 5];
-const sum = numbers.reduce((a, b) => a + b, 0);
-console.log("Sum:", sum);`,
+    python: `# follow me on github www.github.com/0AnshuAditya0
+print("Hello, World!")`,
 
-    python: `# Python Example
-print("Hello, World!")
-
-# Try some code
-numbers = [1, 2, 3, 4, 5]
-total = sum(numbers)
-print(f"Sum: {total}")`,
-
-    java: `public class Main {
+    java: `// follow me on github www.github.com/0AnshuAditya0
+public class Main {
     public static void main(String[] args) {
         System.out.println("Hello, World!");
-        
-        // Try some code
-        int[] numbers = {1, 2, 3, 4, 5};
-        int sum = 0;
-        for (int num : numbers) {
-            sum += num;
-        }
-        System.out.println("Sum: " + sum);
     }
 }`,
 
     cpp: `#include <iostream>
-#include <vector>
-#include <numeric>
 using namespace std;
-
+// follow me on github www.github.com/0AnshuAditya0
 int main() {
     cout << "Hello, World!" << endl;
-    
-    // Try some code
-    vector<int> numbers = {1, 2, 3, 4, 5};
-    int sum = accumulate(numbers.begin(), numbers.end(), 0);
-    cout << "Sum: " << sum << endl;
     
     return 0;
 }`,
 
     c: `#include <stdio.h>
-
+// follow me on github www.github.com/0AnshuAditya0
 int main() {
     printf("Hello, World!\\n");
-    
-    // Try some code
-    int numbers[] = {1, 2, 3, 4, 5};
-    int sum = 0;
-    int length = sizeof(numbers) / sizeof(numbers[0]);
-    
-    for (int i = 0; i < length; i++) {
-        sum += numbers[i];
-    }
-    
-    printf("Sum: %d\\n", sum);
     
     return 0;
 }`,
 
-    typescript: `// TypeScript Example
+    typescript: `// follow me on github www.github.com/0AnshuAditya0
 const message: string = "Hello, World!";
 console.log(message);
 
