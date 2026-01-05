@@ -90,6 +90,13 @@ export function Header() {
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F29F67] group-hover:w-full transition-all duration-300" />
                 </NavLink>
                 <NavLink 
+                  href="/sql-playground" 
+                  className="text-white/70 text-sm font-medium hover:text-white transition-all relative group"
+                >
+                  SQL Playground
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F29F67] group-hover:w-full transition-all duration-300" />
+                </NavLink>
+                <NavLink 
                   href="/explore" 
                   className="text-white/70 text-sm font-medium hover:text-white transition-all relative group"
                 >

@@ -22,11 +22,14 @@ const languageVersions: Record<string, { language: string; version: string }> = 
     java: { language: 'java', version: '15.0.2' },
     cpp: { language: 'c++', version: '10.2.0' },
     c: { language: 'c', version: '10.2.0' },
+    typescript: { language: 'typescript', version: '5.0.3' },
+    go: { language: 'go', version: '1.16.2' },
+    rust: { language: 'rust', version: '1.68.2' },
 };
 
 export async function executePiston(
     code: string,
-    language: 'python' | 'java' | 'cpp' | 'c'
+    language: 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust'
 ): Promise<PistonExecutionResult> {
     const startTime = Date.now();
 
@@ -45,7 +48,10 @@ export async function executePiston(
                     {
                         name: language === 'python' ? 'main.py' :
                             language === 'java' ? 'Main.java' :
-                                language === 'cpp' ? 'main.cpp' : 'main.c',
+                                language === 'cpp' ? 'main.cpp' :
+                                    language === 'c' ? 'main.c' :
+                                        language === 'typescript' ? 'main.ts' :
+                                            language === 'go' ? 'main.go' : 'main.rs',
                         content: code,
                     },
                 ],

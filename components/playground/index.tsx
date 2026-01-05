@@ -114,6 +114,7 @@ export default function Playground() {
               output={output}
               error={error}
               onClear={handleClear}
+              isRunning={isRunning}
             />
           </Panel>
         </PanelGroup>

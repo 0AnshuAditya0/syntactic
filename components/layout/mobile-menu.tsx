@@ -97,6 +97,13 @@ export function MobileMenu() {
                 <span>Playground</span>
               </Link>
               <Link
+                href="/sql-playground"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"
+              >
+                <span>SQL Playground</span>
+              </Link>
+              <Link
                 href="/explore"
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-[#F29F67]/20 transition-colors"

@@ -15,10 +15,8 @@ import { cookies } from 'next/headers';
  * then the server session is established. 
  * We will check for an active session to verify identity.
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
     try {
-        const body = await req.json().catch(() => ({}));
-
         // We can get the user from the Supabase session
         const supabaseAdmin = createAdminClient();
 
@@ -93,7 +91,7 @@ export async function POST(req: NextRequest) {
             message: "IMPORTANT: Save this key securely. You'll need it for public device logins."
         });
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Signup/KeyGen error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },

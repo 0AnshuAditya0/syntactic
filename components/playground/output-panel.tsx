@@ -10,7 +10,6 @@ interface OutputPanelProps {
 }
 
 export function OutputPanel({ output, error, onClear, executionTime, isRunning }: OutputPanelProps) {
-  
   const handleCopy = () => {
     const text = error ? `${error}\n${output}` : output;
     navigator.clipboard.writeText(text);
@@ -19,12 +18,12 @@ export function OutputPanel({ output, error, onClear, executionTime, isRunning }
   const hasContent = !!output || !!error;
 
   return (
-    <div className="h-full flex flex-col transition-colors duration-200">
-      <div className="h-10 flex items-center justify-between px-4 border-b border-inherit">
+    <div className="h-full flex flex-col transition-colors duration-200 text-slate-900 dark:text-slate-100">
+      <div className="h-10 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium opacity-60 uppercase tracking-wider text-inherit">Output</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 dark:text-slate-200">Output</span>
           {executionTime !== undefined && (
-            <span className="text-xs opacity-40 font-mono">
+            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-300">
               ({executionTime}ms)
             </span>
           )}
@@ -34,44 +33,43 @@ export function OutputPanel({ output, error, onClear, executionTime, isRunning }
             variant="ghost"
             size="icon"
             onClick={onClear}
-            className="h-7 w-7 opacity-60 hover:opacity-100 hover:bg-black/5"
+            className="h-8 w-8 text-slate-700 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 focus-visible:ring-slate-500"
             title="Clear output"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4 text-current" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleCopy}
-            className="h-7 w-7 opacity-60 hover:opacity-100 hover:bg-black/5"
+            className="h-8 w-8 text-slate-700 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 focus-visible:ring-slate-500"
             title="Copy output"
           >
-            <Copy className="w-3.5 h-3.5" />
+            <Copy className="w-4 h-4 text-current" />
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 font-mono text-[13px] leading-relaxed">
+      <div className="flex-1 overflow-auto p-4 font-mono text-[13px] leading-relaxed bg-transparent text-slate-900 dark:text-slate-50">
         {isRunning ? (
-           <div className="h-full flex flex-col items-center justify-center opacity-40 gap-3 select-none">
+           <div className="h-full flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-300 select-none">
              <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
-             <p>Executing...</p>
+             <p className="text-sm">Executing...</p>
            </div>
         ) : !hasContent ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-40 gap-3 select-none">
+          <div className="h-full flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-300 select-none">
             <Play className="w-8 h-8" />
-            <p>Click &apos;Run&apos; or press Ctrl+Enter to execute</p>
+            <p className="text-sm">Click &apos;Run&apos; or press Ctrl+Enter to execute</p>
           </div>
         ) : (
-          <div className="space-y-2">
-             {/* Explicitly setting text colors as requested for dark mode visibility */}
+          <div className="space-y-2" aria-live="polite">
             {error && (
-              <pre className="whitespace-pre-wrap break-words text-[#DC2626] dark:text-[#F87171]">
+              <pre className="whitespace-pre-wrap break-words text-[#B91C1C] dark:text-[#FCA5A5]">
                 {error}
               </pre>
             )}
             {output && (
-              <pre className="whitespace-pre-wrap break-words text-[#1F2937] dark:text-[#E6EDF3]">
+              <pre className="whitespace-pre-wrap break-words text-slate-900 dark:text-[#E6EDF3]">
                 {output}
               </pre>
             )}

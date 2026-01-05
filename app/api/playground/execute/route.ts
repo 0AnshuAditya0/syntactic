@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Code exceeds 100KB limit' }, { status: 400 });
         }
 
-        if (!['python', 'java', 'cpp', 'c'].includes(language)) {
+        if (!['python', 'java', 'cpp', 'c', 'typescript', 'go', 'rust'].includes(language)) {
             return NextResponse.json({ error: 'Invalid language' }, { status: 400 });
         }
 
         // Execute code via Piston
-        const result = await executePiston(code, language as 'python' | 'java' | 'cpp' | 'c');
+        const result = await executePiston(code, language as 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust');
 
         // Log execution (optional)
         if (user) {
