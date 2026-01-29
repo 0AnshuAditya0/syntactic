@@ -1,179 +1,90 @@
+<div align="center">
+
 # Syntactic
 
-**Where code meets creativity** - An interactive developer blog platform with live code playground and cross-device sync.
+A developer blog platform with live code playgrounds. Write posts in MDX, embed executable code, and sync your work across devices.
 
-![Next.js](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?logo=tailwindcss)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?logo=supabase)
+**[syntactic.vercel.app](https://syntactic.vercel.app/)**
 
-## ✨ Features
+</div>
 
-### 📝 Interactive Blog
-- **MDX-powered articles** with embedded executable code playgrounds
-- **Live preview** while writing with syntax highlighting
-- **Table of Contents** with active section tracking
-- **Reading progress bar** and estimated reading time
-- **Full-text search** with PostgreSQL GIN indexes
-- **Series/Collections** for organizing related posts
-- **Tags and filtering** for easy discovery
+## What it does
 
-### 💻 Code Playground
-- **Multi-language support**: JavaScript, TypeScript, Python, Java, C, C++
-- **Worker-based execution** for JavaScript/TypeScript (secure sandboxing)
-- **Piston API integration** for compiled languages
-- **Auto-save functionality** with 2-second debounce
-- **File management** with virtual folder structure
-- **Anonymous users** supported (1-hour session expiry)
-- **Rate limiting** and CAPTCHA for security
+Write technical blog posts with embedded code playgrounds that actually run. Code executes in isolated workers (JavaScript/TypeScript) or via Piston API (Python, Java, C, C++). Everything syncs across devices using a private key system instead of traditional auth.
 
-### 🔄 Cross-Device Sync
-- **Unique private key system** for seamless authentication
-- **Direct session creation** (no magic link delays)
-- **Private key recovery** via email verification
-- **Sync code files** across all your devices instantly
+**Blog features:**
+- MDX support with live preview
+- Full-text search
+- Post series and tags
+- Reading time & progress tracking
 
-### 🎨 Modern UI/UX
-- **Dark/Light mode** with system preference detection
-- **Responsive design** (mobile-first approach)
-- **Smooth animations** with Framer Motion
-- **Keyboard shortcuts** (Cmd+K for search)
-- **Accessible** (WCAG 2.1 AA compliant)
+**Playground:**
+- Multi-language support
+- Auto-save every 2 seconds
+- Works for anonymous users (sessions expire after 1 hour)
+- File management with folders
 
-### 🔒 Security Features
-- **Worker thread isolation** for code execution (no eval)
-- **MDX sanitization** with DOMPurify (XSS prevention)
-- **Rate limiting**: 10/min authenticated, 5/min anonymous
-- **CAPTCHA** after 3 anonymous executions
-- **File size limits**: 100KB code, 5MB images
-- **Row Level Security** (RLS) on all database tables
-- **Error monitoring** with Sentry integration
+**Security stuff:**
+- Code runs in worker threads, no eval()
+- Rate limiting (10/min for logged in users, 5/min anonymous)
+- Cloudflare Turnstile after 3 anonymous runs
+- DOMPurify for MDX sanitization
 
-## 🚀 Getting Started
+## Setup
 
-### Prerequisites
+You'll need Node.js 18+, a Supabase account, and Cloudflare Turnstile keys.
 
-- Node.js 18+ and npm
-- Supabase account
-- Cloudflare Turnstile account
-- Sentry account (optional)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/0anshuaditya0/syntactic.git
-   cd syntactic
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Setup environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Fill in your Supabase credentials and other API keys in `.env.local`
-
-4. **Setup Supabase**
-   - Create a new Supabase project
-   - Run the complete database schema
-   - Create required storage buckets and scheduled jobs
-
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 📁 Project Structure
-
-```
-syntactic/
-├── app/                      # Next.js App Router
-│   ├── api/                  # API routes
-│   │   ├── auth/            # Authentication endpoints
-│   │   ├── code/            # Code execution & file management
-│   │   ├── posts/           # Blog post CRUD
-│   │   ├── comments/        # Comment system
-│   │   └── search/          # Full-text search
-│   ├── auth/                # Auth pages (login, signup, sync-login)
-│   ├── blog/                # Blog listing and individual posts
-│   ├── playground/          # Code playground
-│   ├── write/               # Post editor
-│   ├── profile/             # User profiles
-│   ├── settings/            # User settings
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Homepage
-├── components/              # React components
-│   ├── ui/                  # shadcn/ui components
-│   ├── auth/                # Authentication components
-│   ├── blog/                # Blog-related components
-│   ├── code/                # Code playground components
-│   ├── mdx/                 # MDX custom components
-│   └── layout/              # Layout components (header, footer)
-├── lib/                     # Utility libraries
-│   ├── auth/                # Authentication utilities
-│   ├── code/                # Code execution utilities
-│   ├── mdx/                 # MDX processing
-│   ├── utils/               # General utilities
-│   ├── supabase.ts          # Supabase client
-│   └── monitoring.ts        # Error monitoring
-├── hooks/                   # Custom React hooks
-├── types/                   # TypeScript type definitions
-├── public/                  # Static assets
-└── workers/                 # Worker threads for code execution
+```bash
+git clone https://github.com/0anshuaditya0/syntactic.git
+cd syntactic
+npm install
+cp .env.example .env.local
 ```
 
-## 🛠️ Tech Stack
+Add your Supabase and Turnstile credentials to `.env.local`, then run the database schema in your Supabase project.
 
-### Frontend
-- **Framework**: Next.js 14+ (App Router, Server Components)
-- **Language**: TypeScript 5.3+
-- **Styling**: TailwindCSS + shadcn/ui
-- **Animations**: Framer Motion
-- **Code Editor**: Monaco Editor
-- **MDX**: next-mdx-remote
+```bash
+npm run dev
+```
 
-### Backend & Database
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth + Custom Private Key System
-- **Storage**: Supabase Storage
-- **API**: Next.js Route Handlers
+Visit `localhost:3000`
 
-### Code Execution
-- **JavaScript/TypeScript**: Worker threads (Node.js)
-- **Python, Java, C, C++**: Piston API
+## Stack
 
-### Security & Monitoring
-- **CAPTCHA**: Cloudflare Turnstile
-- **Error Monitoring**: Sentry
-- **Sanitization**: DOMPurify
+- Next.js 14 (app router)
+- TypeScript
+- Tailwind + shadcn/ui
+- Supabase (PostgreSQL + Auth + Storage)
+- Monaco Editor
+- Worker threads for JS/TS execution
+- Piston API for other languages
 
-## 🚢 Deployment
+## Project structure
 
-### Vercel (Recommended)
+```
+app/
+  ├── api/              # Route handlers
+  ├── blog/             # Post pages
+  ├── playground/       # Code editor
+  └── write/            # Post editor
+components/
+  ├── ui/               # shadcn components
+  ├── blog/
+  └── code/
+lib/
+  ├── supabase.ts
+  └── code/             # Execution logic
+workers/                # Code execution workers
+```
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy!
+## Deploy
 
-## 📄 License
+Works on Vercel out of the box. Push to GitHub, import to Vercel, add environment variables, done.
 
-This project is licensed under the MIT License.
+## License
 
-## 📧 Contact
-
-- Website: [syntactic.vercel.app](https://syntactic.vercel.app/)
-- Twitter: [@AnshuAd43072185](https://x.com/AnshuAd43072185)
-- LinkedIn: [Anshu Aditya](https://linkedin.com/in/0anshuaditya)
+MIT
 
 ---
 
-**Built with ❤️ by the Syntactic team**
+Made by [@AnshuAd43072185](https://x.com/AnshuAd43072185)
