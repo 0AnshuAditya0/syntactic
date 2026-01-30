@@ -79,7 +79,7 @@ export function PlaygroundNav({
             variant="outline"
             size="icon"
             onClick={onThemeToggle}
-            className="h-9 w-9 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-full"
+            className="h-9 w-9 p-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-full"
             title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
           >
             {theme === 'light' ? (

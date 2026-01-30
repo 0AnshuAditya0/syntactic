@@ -18,10 +18,10 @@ export function OutputPanel({ output, error, onClear, executionTime, isRunning }
   const hasContent = !!output || !!error;
 
   return (
-    <div className="h-full flex flex-col transition-colors duration-200 text-slate-900 dark:text-slate-100">
+    <div className="h-full flex flex-col transition-colors duration-200 text-slate-900 dark:text-white">
       <div className="h-10 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 dark:text-slate-200">Output</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 dark:text-white">Output</span>
           {executionTime !== undefined && (
             <span className="text-[11px] font-mono text-slate-500 dark:text-slate-300">
               ({executionTime}ms)
