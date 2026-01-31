@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase/client';
 import { Language } from '@/lib/playground/templates';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SaveDialogProps {
   code: string;
@@ -15,11 +16,27 @@ interface SaveDialogProps {
 }
 
 export function SaveDialog({ code, language, onSaved }: SaveDialogProps) {
+
+  const { user } = useAuth();
   const [filename, setFilename] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  if (!user) {
+    return (
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4 text-center">
+        <h3 className="font-semibold">Sign in to Save</h3>
+        <p className="text-sm text-muted-foreground">
+          You need to be logged in to save your code snippets to your profile.
+        </p>
+        <Button asChild className="w-full bg-[#F29F67] hover:bg-[#E08D55] text-[#1E1E2C]">
+          <a href="/auth/login">Login / Sign Up</a>
+        </Button>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
     if (!filename.trim()) {
@@ -31,27 +48,14 @@ export function SaveDialog({ code, language, onSaved }: SaveDialogProps) {
     setError('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const fileData: Record<string, unknown> = {
+      const fileData = {
+        user_id: user.id,
         filename: filename.trim(),
         language,
         code,
         description: description.trim() || null,
         is_public: isPublic,
       };
-
-      if (user) {
-        fileData.user_id = user.id;
-      } else {
-        // Anonymous user - set session ID and expiry
-        const sessionId = localStorage.getItem('playground_session') || 
-          Math.random().toString(36).substring(7);
-        localStorage.setItem('playground_session', sessionId);
-        
-        fileData.session_id = sessionId;
-        // expires_at will be set by trigger (1 hour)
-      }
 
       const { data, error: saveError } = await supabase
         .from('code_files')

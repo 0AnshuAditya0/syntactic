@@ -29,7 +29,7 @@ export function EditorLayout({
   published,
 }: EditorLayoutProps) {
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
+    <div className="h-[calc(100vh-8rem)] mt-32 flex flex-col bg-white dark:bg-gray-900">
       {/* Toolbar */}
       <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 bg-white dark:bg-gray-900 z-10">
         <div className="flex items-center gap-4">

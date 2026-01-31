@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Panel, PanelGroup } from 'react-resizable-panels';
+import { X } from 'lucide-react';
 import { PlaygroundNav } from '@/components/playground/playground-nav';
 import { CodeEditorWrapper } from '@/components/playground/code-editor-wrapper';
 import { OutputPanel } from '@/components/playground/output-panel';
@@ -9,7 +10,7 @@ import { StatusBar } from '@/components/playground/status-bar';
 import { ResizeHandle } from '@/components/playground/resize-handle';
 import { Language, templates } from '@/lib/playground/templates';
 import { executeJavaScript } from '@/lib/playground/javascript-executor';
-
+import { SaveDialog } from '@/components/playground/save-dialog';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 export default function Playground() {
@@ -24,6 +25,7 @@ export default function Playground() {
   const [output, setOutput] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [isRunning, setIsRunning] = useState(false);
+  const [isSaveOpen, setIsSaveOpen] = useState(false);
 
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
@@ -64,13 +66,37 @@ export default function Playground() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col bg-white overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-white overflow-hidden relative">
+      {isSaveOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm relative">
+             {/* Close button for overlay */}
+             <button 
+                onClick={() => setIsSaveOpen(false)}
+                className="absolute -top-3 -right-3 p-1 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-500 hover:text-gray-900 border z-10"
+             >
+               <span className="sr-only">Close</span>
+               <X className="w-4 h-4" />
+             </button>
+            <SaveDialog 
+              code={code}
+              language={language}
+              onSaved={(id) => {
+                setIsSaveOpen(false);
+                // Optionally show success toast
+                alert('Saved successfully!');
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Navigation - Always Light/Neutral */}
       <PlaygroundNav 
         language={language}
         onLanguageChange={handleLanguageChange}
         onRun={handleRun}
-        onSave={() => alert('Save functionality')}
+        onSave={() => setIsSaveOpen(true)}
         onReset={() => { setCode(templates[language]); handleClear(); }}
         onFiles={() => alert('File tree functionality')}
         isRunning={isRunning}

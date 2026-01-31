@@ -123,12 +123,15 @@ export function Header() {
               {effectiveUser ? (
                 <>
                   {/* Write Button - Hidden on mobile */}
-                  <NavLink href="/editor" className="hidden md:block">
-                    <button className="flex items-center gap-2 px-3 py-2 bg-[#F29F67] hover:bg-[#E08D55] rounded-full transition-all group text-[#1E1E2C]">
-                      <PenSquare size={14} className="text-[#1E1E2C]" />
-                      <span className="text-[#1E1E2C] text-sm font-medium">Write</span>
-                    </button>
-                  </NavLink>
+                  {/* Write Button - Hidden on mobile, only meaningful for full users */}
+                  {user && (
+                    <NavLink href="/editor" className="hidden md:block">
+                      <button className="flex items-center gap-2 px-3 py-2 bg-[#F29F67] hover:bg-[#E08D55] rounded-full transition-all group text-[#1E1E2C]">
+                        <PenSquare size={14} className="text-[#1E1E2C]" />
+                        <span className="text-[#1E1E2C] text-sm font-medium">Write</span>
+                      </button>
+                    </NavLink>
+                  )}
                   
                   <div className="hidden md:block">
                     <NotificationBell />
@@ -155,9 +158,10 @@ export function Header() {
                         <div className="px-3 py-2 text-xs text-white/50 border-b border-white/10 mb-1">
                           Signed in as <br/>
                           <span className="text-white font-medium truncate block">{displayName}</span>
+                          {userType === 'temp' && <span className="text-[10px] text-[#F29F67] uppercase tracking-wider font-bold">(Guest)</span>}
                         </div>
                         
-                        {userType === 'oauth' && (
+                        {userType === 'oauth' ? (
                           <>
                             <NavLink
                               href={`/profile/${displayName}`}
@@ -173,6 +177,17 @@ export function Header() {
                               <Settings className="w-4 h-4" />
                               Settings
                             </NavLink>
+                             <hr className="my-1 border-white/10" />
+                          </>
+                        ) : (
+                          <>
+                             <div className="px-3 py-2 text-xs text-white/70">
+                               Create an account to access profile and writing features.
+                             </div>
+                             <NavLink href="/auth/signup" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-[#F29F67]/20 transition-colors text-[#F29F67] font-medium">
+                               <User className="w-4 h-4" />
+                               Sign Up
+                             </NavLink>
                              <hr className="my-1 border-white/10" />
                           </>
                         )}

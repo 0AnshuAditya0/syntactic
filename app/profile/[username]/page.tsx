@@ -11,8 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfilePage() {
   const params = useParams();
-  const username = params.username as string;
-  const { user: currentUser } = useAuth();
+  const username = decodeURIComponent(params.username as string);
+  const { user: authUser, loading: authLoading } = useAuth(); // Renamed to authUser
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -23,11 +23,20 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'posts' | 'code' | 'activity'>('posts');
 
   useEffect(() => {
-    fetchProfile();
-  }, [username]);
+    if (!authLoading) {
+        fetchProfile();
+    }
+  }, [username, authUser, authLoading]);
 
   async function fetchProfile() {
     try {
+        // Don't set loading true here if it's just a re-fetch due to auth change? 
+        // Better to keep it simple:
+        // setLoading(true); // Don't reset loading to avoid flicker if we already have data?
+        // Actually, if username changes, we MUST set loading.
+        // If only authUser changes, maybe not? 
+        // Let's just set loading=true if !profile or profile.username !== username
+        
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -43,23 +52,17 @@ export default function ProfilePage() {
 
       setProfile(data);
       
-      // Fetch posts count and data
-      const { count: postsCount, data: postsData } = await supabase
+      const isOwnProfile = authUser?.id === data.id;
+
+      // Parallelize fetches
+      const postPromise = supabase
         .from('posts')
         .select('*', { count: 'exact' })
         .eq('author_id', data.id)
         .eq('published', true)
         .order('published_at', { ascending: false })
         .limit(10);
-      
-      setPostsCount(postsCount || 0);
-      setPosts(postsData || []);
-      
-      // Fetch code files count and data
-      // Show all files if viewing own profile, only public files for others
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const isOwnProfile = currentUser?.id === data.id;
-      
+
       let filesQuery = supabase
         .from('code_files')
         .select('*', { count: 'exact' })
@@ -67,15 +70,18 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
         .limit(10);
       
-      // Only filter by is_public if viewing someone else's profile
       if (!isOwnProfile) {
         filesQuery = filesQuery.eq('is_public', true);
       }
+
+      const [postsRes, filesRes] = await Promise.all([postPromise, filesQuery]);
       
-      const { count: filesCount, data: filesData } = await filesQuery;
+      setPostsCount(postsRes.count || 0);
+      setPosts(postsRes.data || []);
       
-      setCodeFilesCount(filesCount || 0);
-      setCodeFiles(filesData || []);
+      setCodeFilesCount(filesRes.count || 0);
+      setCodeFiles(filesRes.data || []);
+
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -108,10 +114,10 @@ export default function ProfilePage() {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profile.id;
+  const isOwnProfile = authUser?.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-32">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
