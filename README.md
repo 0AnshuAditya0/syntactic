@@ -8,6 +8,9 @@ A developer blog platform with live code playgrounds. Write posts in MDX, embed 
 
 </div>
 
+![ss](public/ss.png)
+
+
 ## What it does
 
 Write technical blog posts with embedded code playgrounds that actually run. Code executes in isolated workers (JavaScript/TypeScript) or via Piston API (Python, Java, C, C++). Everything syncs across devices using a private key system instead of traditional auth.
