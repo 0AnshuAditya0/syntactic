@@ -8,7 +8,7 @@ A developer blog platform with live code playgrounds. Write posts in MDX, embed 
 
 </div>
 
-![ss](public/ss.png)
+![ss](public/pfp1.png)
 
 
 ## What it does
