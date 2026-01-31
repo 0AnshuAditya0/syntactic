@@ -115,6 +115,7 @@ export default function Playground() {
               error={error}
               onClear={handleClear}
               isRunning={isRunning}
+              theme={editorTheme}
             />
           </Panel>
         </PanelGroup>

@@ -91,15 +91,6 @@ export function PlaygroundNav({
         </div>
 
         <div className="flex items-center gap-2 pr-2">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={onFiles}
-            className="h-9 px-3 gap-2 text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all font-medium"
-          >
-            <FileCode className="w-4 h-4" />
-            <span>Files</span>
-          </Button>
           
           <Button 
             variant="ghost" 

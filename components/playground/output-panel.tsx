@@ -7,9 +7,10 @@ interface OutputPanelProps {
   onClear: () => void;
   executionTime?: number;
   isRunning?: boolean;
+  theme?: 'light' | 'dark';
 }
 
-export function OutputPanel({ output, error, onClear, executionTime, isRunning }: OutputPanelProps) {
+export function OutputPanel({ output, error, onClear, executionTime, isRunning, theme }: OutputPanelProps) {
   const handleCopy = () => {
     const text = error ? `${error}\n${output}` : output;
     navigator.clipboard.writeText(text);
@@ -18,7 +19,8 @@ export function OutputPanel({ output, error, onClear, executionTime, isRunning }
   const hasContent = !!output || !!error;
 
   return (
-    <div className="h-full flex flex-col transition-colors duration-200 text-slate-900 dark:text-white">
+    <div className={`h-full ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="h-full flex flex-col transition-colors duration-200 text-slate-900 dark:text-white">
       <div className="h-10 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 dark:text-white">Output</span>
@@ -69,12 +71,13 @@ export function OutputPanel({ output, error, onClear, executionTime, isRunning }
               </pre>
             )}
             {output && (
-              <pre className="whitespace-pre-wrap break-words text-slate-900 dark:text-[#E6EDF3]">
+              <pre className="whitespace-pre-wrap break-words text-slate-900 dark:text-white">
                 {output}
               </pre>
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
