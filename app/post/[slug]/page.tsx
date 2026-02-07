@@ -7,6 +7,7 @@ import { MDXContent } from '@/components/mdx/mdx-content';
 import { ReadingProgress } from '@/components/post/reading-progress';
 import { TableOfContents } from '@/components/post/table-of-contents';
 import { CommentList } from '@/components/comments/comment-list';
+import { PostActions } from '@/components/post/post-actions';
 
 interface PostPageProps {
   params: {
@@ -50,7 +51,7 @@ export default async function PostPage({ params }: PostPageProps) {
       <div className="min-h-screen bg-[#F5F5F7] dark:bg-gray-900 pt-20">
         {/* Header */}
         <div className="border-b-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link 
               href="/blog" 
               className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-[#F29F67] transition-colors font-medium"
@@ -58,6 +59,7 @@ export default async function PostPage({ params }: PostPageProps) {
               <ArrowLeft className="w-4 h-4" />
               Back to Blog
             </Link>
+            <PostActions postId={post.id} authorId={post.author_id} />
           </div>
         </div>
 
@@ -85,17 +87,19 @@ export default async function PostPage({ params }: PostPageProps) {
               {/* Metadata */}
               <div className="flex items-center gap-4 mb-8 pb-8 border-b-2 border-gray-300 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  {post.profiles?.avatar_url ? (
-                    <img
-                      src={post.profiles.avatar_url}
-                      alt={post.profiles.display_name || post.profiles.username}
-                      className="w-12 h-12 rounded-full border-2 border-[#F29F67]"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-[#F29F67] flex items-center justify-center text-[#1E1E2C] font-bold text-lg border-2 border-[#F29F67]">
-                      {post.profiles?.username?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Link href={`/profile/${post.profiles?.username}`} className="group relative block">
+                    {post.profiles?.avatar_url ? (
+                      <img
+                        src={post.profiles.avatar_url}
+                        alt={post.profiles.display_name || post.profiles.username}
+                        className="w-12 h-12 rounded-full border-2 border-[#F29F67] transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#F29F67] flex items-center justify-center text-[#1E1E2C] font-bold text-lg border-2 border-[#F29F67] transition-transform group-hover:scale-105">
+                        {post.profiles?.username?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
                   <div>
                     <Link 
                       href={`/profile/${post.profiles?.username}`}

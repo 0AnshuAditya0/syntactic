@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Settings, Eye, Code } from 'lucide-react';
+import { ArrowLeft, Save, Settings, Eye, Code, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface EditorLayoutProps {
@@ -14,6 +14,7 @@ interface EditorLayoutProps {
   showPreview: boolean;
   onOpenSettings: () => void;
   onPublish: () => void;
+  onDelete?: () => void;
   published: boolean;
 }
 
@@ -26,38 +27,46 @@ export function EditorLayout({
   showPreview,
   onOpenSettings,
   onPublish,
+  onDelete,
   published,
 }: EditorLayoutProps) {
   return (
-    <div className="h-[calc(100vh-8rem)] mt-32 flex flex-col bg-white dark:bg-gray-900">
+// Adjusting layout to avoid navbar overlap
+    <div className="h-screen pt-20 flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Toolbar */}
-      <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 bg-white dark:bg-gray-900 z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+      <header className="h-16 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-20 shrink-0">
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-800" />
-          <h1 className="font-medium truncate max-w-[200px] sm:max-w-md">
-            {title || 'Untitled Post'}
-          </h1>
-          {saving && (
-            <span className="text-xs text-muted-foreground animate-pulse">
-              Saving...
-            </span>
-          )}
+          
+          <div className="flex flex-col">
+            <h1 className="font-semibold text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-md text-base sm:text-lg leading-tight">
+              {title || 'Untitled Post'}
+            </h1>
+            {saving ? (
+              <span className="text-[10px] uppercase tracking-wider font-bold text-[#F29F67] animate-pulse">
+                Saving...
+              </span>
+            ) : (
+                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-300 dark:text-gray-600">
+                Saved
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={onTogglePreview}
-            className="hidden sm:flex"
+            className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             {showPreview ? (
               <>
                 <Code className="w-4 h-4 mr-2" />
-                Edit
+                Editor
               </>
             ) : (
               <>
@@ -67,25 +76,32 @@ export function EditorLayout({
             )}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSave}
-            disabled={saving}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
+          {onDelete && (
+             <Button
+              variant="ghost" 
+              size="icon"
+              className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              onClick={onDelete}
+              title="Delete Post"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
 
-          <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-            <Settings className="w-4 h-4" />
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
+
+          <Button variant="ghost" size="icon" onClick={onOpenSettings} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <Settings className="w-5 h-5" />
           </Button>
 
           <Button 
             size="sm" 
-            className={published ? "bg-yellow-600 hover:bg-yellow-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}
+            className={`font-medium shadow-sm transition-all px-6 rounded-full ${
+              published 
+                ? "bg-yellow-500 hover:bg-yellow-600 text-white border-none" 
+                : "bg-black dark:bg-white text-white dark:text-black hover:opacity-90"
+            }`}
             onClick={onPublish}
-            disabled={saving}
           >
             {published ? 'Unpublish' : 'Publish'}
           </Button>
