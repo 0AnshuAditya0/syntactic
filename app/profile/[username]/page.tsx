@@ -23,12 +23,16 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'posts' | 'code' | 'activity'>('posts');
 
   useEffect(() => {
+    console.log('[ProfilePage] Effect triggered', { username, authLoading, authUserId: authUser?.id });
     if (!authLoading) {
         fetchProfile();
+    } else {
+        console.log('[ProfilePage] Auth still loading...');
     }
   }, [username, authUser, authLoading]);
 
   async function fetchProfile() {
+    console.log('[ProfilePage] Fetching profile data for username:', username);
     try {
         // Don't set loading true here if it's just a re-fetch due to auth change? 
         // Better to keep it simple:
@@ -40,8 +44,10 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username)
+        .ilike('username', username)
         .single();
+      
+      console.log('[ProfilePage] Fetch result:', { data, error });
 
       if (error) {
         if (error.code === 'PGRST116') {

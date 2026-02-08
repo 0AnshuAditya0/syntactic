@@ -52,33 +52,48 @@ export function PostSettings({ isOpen, onClose, post, onUpdate }: PostSettingsPr
   }
 
   async function handleCreateSeries() {
-    if (!newSeriesTitle.trim()) return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const slug = newSeriesTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-    const { data, error } = await supabase
-      .from('series')
-      .insert({
-        title: newSeriesTitle,
-        slug,
-        author_id: user.id
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error('Failed to create series');
+    if (!newSeriesTitle.trim()) {
+      toast.error('Please enter a series name');
       return;
     }
 
-    setSeries([data, ...series]);
-    onUpdate({ series_id: data.id });
-    setIsCreatingSeries(false);
-    setNewSeriesTitle('');
-    toast.success('Series created!');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const slug = newSeriesTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      console.log('Creating series:', { title: newSeriesTitle, slug, author_id: user.id });
+
+      const { data, error } = await supabase
+        .from('series')
+        .insert({
+          title: newSeriesTitle,
+          slug,
+          author_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Series creation error:', error);
+        toast.error(`Failed to create series: ${error.message}`);
+        return;
+      }
+
+      console.log('Series created successfully:', data);
+      setSeries([data, ...series]);
+      onUpdate({ series_id: data.id });
+      setIsCreatingSeries(false);
+      setNewSeriesTitle('');
+      toast.success('Series created!');
+    } catch (err: any) {
+      console.error('Unexpected error:', err);
+      toast.error(`Error: ${err.message}`);
+    }
   }
 
   if (!isOpen) return null;
@@ -93,19 +108,12 @@ export function PostSettings({ isOpen, onClose, post, onUpdate }: PostSettingsPr
           </Button>
         </div>
 
-        {/* Cover Image */}
-        <div className="space-y-4">
-          <Label>Cover Image</Label>
-          <CoverImageUpload
-            url={post.cover_image}
-            onUpload={(url) => onUpdate({ cover_image: url })}
-            onRemove={() => onUpdate({ cover_image: null })}
-          />
-        </div>
-
         {/* Slug */}
         <div className="space-y-2">
-          <Label htmlFor="slug">URL Slug</Label>
+          <Label htmlFor="slug">
+            URL Slug
+            <span className="ml-2 text-xs text-muted-foreground font-normal">(Auto-generated from title)</span>
+          </Label>
           <Input
             id="slug"
             value={slug}
@@ -115,7 +123,8 @@ export function PostSettings({ isOpen, onClose, post, onUpdate }: PostSettingsPr
             }}
           />
           <p className="text-xs text-muted-foreground">
-            syntactic.com/post/{slug}
+            This is how your post URL will look:<br/>
+            <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">syntactic.com/post/{slug}</span>
           </p>
         </div>
 

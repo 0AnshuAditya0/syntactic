@@ -20,15 +20,15 @@ export function TitleEditor({ value, onChange, placeholder = 'Untitled Post' }: 
   }, [value]);
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 px-8 py-6 bg-white dark:bg-gray-900">
+    <div className="w-full max-w-4xl mx-auto px-6 pt-12 pb-4 bg-transparent group mb-4">
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full text-4xl font-bold resize-none outline-none bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-700 overflow-hidden"
+        className="w-full text-4xl sm:text-5xl font-extrabold font-sans tracking-tight resize-none outline-none bg-transparent text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-700 overflow-hidden leading-tight min-h-[4rem]"
         rows={1}
-        style={{ minHeight: '3rem' }}
+        required
       />
     </div>
   );

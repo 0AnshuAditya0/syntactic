@@ -31,19 +31,13 @@ export function NotificationBell() {
 
     const { data } = await supabase
       .from('notifications')
-      .select(`
-        *,
-        actor:actor_id (
-          username,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10);
 
     setNotifications(data || []);
-    setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+    setUnreadCount(data?.filter(n => !n.read).length || 0);
   }
 
   function subscribeToNotifications() {
@@ -75,12 +69,12 @@ export function NotificationBell() {
 
     await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update({ read: true })
       .eq('user_id', user.id)
-      .eq('is_read', false);
+      .eq('read', false);
 
     setUnreadCount(0);
-    setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
   }
 
   function getNotificationText(type: string) {

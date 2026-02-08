@@ -7,9 +7,10 @@ import { useEffect, useState } from 'react';
 interface MdxEditorProps {
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 
-export function MdxEditor({ value, onChange }: MdxEditorProps) {
+export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -47,6 +48,7 @@ export function MdxEditor({ value, onChange }: MdxEditorProps) {
         options={{
           minimap: { enabled: false },
           wordWrap: 'on',
+          readOnly: disabled,
         }}
         onMount={handleEditorDidMount}
         loading={

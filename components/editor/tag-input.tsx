@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 interface TagInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
-export function TagInput({ tags = [], onChange }: TagInputProps) {
+export function TagInput({ tags = [], onChange, placeholder, disabled }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -54,8 +56,9 @@ export function TagInput({ tags = [], onChange }: TagInputProps) {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={addTag}
-        placeholder="Add tags (press Enter)"
+        placeholder={placeholder || "Add tags (press Enter)"}
         className="w-full"
+        disabled={disabled}
       />
     </div>
   );

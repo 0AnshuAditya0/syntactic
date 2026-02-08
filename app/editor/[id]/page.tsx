@@ -319,8 +319,8 @@ export default function EditorPage() {
           <PreviewPanel 
             content={content} 
             title={title}
-            tags={post?.tags || []}
-            readingTime={post?.reading_time || 0}
+            tags={(post?.tags as string[]) || []}
+            readingTime={(post?.reading_time as number) || 0}
             coverImage={coverImage}
           />
         </div>

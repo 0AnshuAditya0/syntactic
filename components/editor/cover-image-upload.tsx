@@ -26,31 +26,44 @@ export function CoverImageUpload({ url, onUpload, onRemove }: CoverImageUploadPr
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
 
       // Check file size (max 5MB for covers)
       if (file.size > 5 * 1024 * 1024) {
         throw new Error('Image must be smaller than 5MB.');
       }
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('post-images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('File must be an image.');
       }
 
-      // Get public URL
-      const { data } = supabase.storage.from('post-images').getPublicUrl(filePath);
+      console.log('Uploading cover image via API route...');
+
+      // Upload via API route (bypasses CORS issues)
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/cover', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { url } = await response.json();
+      console.log('Cover upload successful, URL:', url);
       
-      onUpload(data.publicUrl);
+      onUpload(url);
     } catch (error: any) {
+      console.error('Cover upload error:', error);
       setError(error.message);
     } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setUploading(false);
     }
   }

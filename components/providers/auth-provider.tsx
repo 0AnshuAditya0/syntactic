@@ -52,33 +52,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     async function initializeAuth() {
-      // 1. Check Supabase Auth (Persistent)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        if (mounted) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
+      // Safety timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        if (mounted && loading) {
+          console.warn('Auth initialization timed out - forcing loading to false');
+          setLoading(false);
         }
-      } else {
-        // 2. Check Temporary Session (Public Device)
-        const tempToken = sessionStorage.getItem('syntactic_temp_token');
-        const storedUser = sessionStorage.getItem('syntactic_temp_user');
-        const storedExpiry = sessionStorage.getItem('syntactic_session_expires');
+      }, 5000);
 
-        if (tempToken && storedUser && storedExpiry) {
-          const expires = new Date(storedExpiry).getTime();
-          if (Date.now() < expires) {
-            if (mounted) {
-              setTempUser(JSON.parse(storedUser));
-              setSessionExpiresAt(storedExpiry);
+      try {
+        // 1. Check Supabase Auth (Persistent)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (session?.user) {
+          if (mounted) {
+            setUser(session.user);
+            // Don't await profile fetch to block UI, let it populate
+            fetchProfile(session.user.id);
+          }
+        } else {
+          // 2. Check Temporary Session (Public Device)
+          const tempToken = sessionStorage.getItem('syntactic_temp_token');
+          const storedUser = sessionStorage.getItem('syntactic_temp_user');
+          const storedExpiry = sessionStorage.getItem('syntactic_session_expires');
+
+          if (tempToken && storedUser && storedExpiry) {
+            const expires = new Date(storedExpiry).getTime();
+            if (Date.now() < expires) {
+              if (mounted) {
+                setTempUser(JSON.parse(storedUser));
+                setSessionExpiresAt(storedExpiry);
+              }
+            } else {
+              // Expired
+              sessionStorage.clear();
             }
-          } else {
-            // Expired
-            sessionStorage.clear();
           }
         }
-        
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+      } finally {
+        clearTimeout(timeoutId);
         if (mounted) setLoading(false);
       }
     }

@@ -1,5 +1,4 @@
 -- AUTH SYSTEM REDESIGN
--- Run this in Supabase SQL Editor
 
 -- 1. Create separate table for private keys (migrating from profiles if needed)
 CREATE TABLE IF NOT EXISTS public.private_key_hash (
