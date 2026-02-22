@@ -20,13 +20,13 @@ export function TitleEditor({ value, onChange, placeholder = 'Untitled Post' }: 
   }, [value]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-6 pt-12 pb-4 bg-transparent group mb-4">
+    <div className="w-full max-w-4xl mx-auto py-8 bg-transparent group">
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full text-4xl sm:text-5xl font-extrabold font-sans tracking-tight resize-none outline-none bg-transparent text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-700 overflow-hidden leading-tight min-h-[4rem]"
+        className="w-full text-5xl sm:text-6xl font-black font-sans tracking-tight resize-none outline-none bg-transparent text-gray-900 dark:text-white placeholder:text-gray-200 dark:placeholder:text-gray-800 overflow-hidden leading-[1.1] min-h-[4rem] transition-colors"
         rows={1}
         required
       />

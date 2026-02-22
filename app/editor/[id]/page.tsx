@@ -13,6 +13,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { calculateReadingTime } from '@/lib/utils/reading-time';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function EditorPage() {
   const params = useParams();
@@ -20,7 +21,8 @@ export default function EditorPage() {
   
   // Track the actual ID we are working with (starts as 'new' or UUID)
   const [postId, setPostId] = useState<string>(params.id as string);
-  const { user } = useAuth();
+  const { user, tempUser } = useAuth();
+  const currentUser = user || tempUser;
 
   const [post, setPost] = useState<any>(null);
   const [content, setContent] = useState('');
@@ -31,6 +33,8 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [lastSavedContent, setLastSavedContent] = useState('');
 
   const debouncedContent = useDebounce(content, 2000);
   const debouncedTitle = useDebounce(title, 1000);
@@ -61,25 +65,32 @@ export default function EditorPage() {
     }
   }, [postId]);
 
-  const handleSave = useCallback(async (updates: any = {}) => {
-    // Prevent saving if user not logged in
-    if (!user) return;
+  const handleSave = useCallback(async (updates: any = {}, options: { force?: boolean } = {}) => {
+    if (!currentUser) {
+      console.warn('Cannot save: No authenticated user found');
+      return null;
+    }
     
-    // For NEW posts, strictly prevent concurrent creations
-    if (postId === 'new' && saving) return;
+    // Auto-save lock: Skip only if NOT forced and already saving a new post
+    if (postId === 'new' && saving && !options.force) {
+      console.log('[Editor] Skipping auto-save: Creation already in progress');
+      return null;
+    }
 
     setSaving(true);
     try {
       if (postId === 'new') {
-        // Initial creation
-        const newSlug = `untitled-${Date.now()}`;
+        const newSlug = (updates.title || title || 'untitled')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
         
         const { data, error } = await supabase
           .from('posts')
           .insert({
             title: title || 'Untitled Post',
             content: content || '',
-            author_id: user.id,
+            author_id: currentUser.id,
             slug: newSlug,
             published: false,
             ...updates
@@ -89,15 +100,15 @@ export default function EditorPage() {
 
         if (error) throw error;
 
-        // Update state to reflect created post
+        // Transition state to the new UUID
         setPost(data);
         setPostId(data.id);
-        
-        // Update URL silently
+        setLastSavedContent(content);
+        // Use router for a cleaner transition if needed, or just stay on page
         window.history.replaceState(null, '', `/editor/${data.id}`);
-        
+        console.log('[Editor] New post created ID:', data.id);
+        return data; 
       } else {
-        // Update existing
         const postData = {
           ...updates,
           updated_at: new Date().toISOString(),
@@ -111,16 +122,18 @@ export default function EditorPage() {
 
         if (error) throw error;
         
-        // Optimistic update
         setPost((prev: any) => ({ ...prev, ...postData }));
+        setLastSavedContent(content);
+        return data;
       }
-
-    } catch (error) {
-      console.error('Error saving post:', error);
+    } catch (error: any) {
+      console.error('[Editor] Database error in handleSave:', error);
+      toast.error('Failed to save: ' + (error.message || 'Unknown error'));
+      throw error;
     } finally {
-      setSaving(false);
+      if (!options.force) setSaving(false);
     }
-  }, [postId, user, title, content, saving]);
+  }, [postId, currentUser, title, content, saving]);
 
   useEffect(() => {
     if (postId === 'new') {
@@ -204,41 +217,92 @@ export default function EditorPage() {
     }
   }
 
-  async function handlePublish() {
-    
-    const isPublished = post?.published || false;
-    const action = isPublished ? 'unpublish' : 'publish';
-
-    if (!confirm(`Are you sure you want to ${action} this post?`)) {
+  const handlePublish = async () => {
+    if (!currentUser) {
+      toast.error('Authentication required');
       return;
     }
 
+    if (title.trim().length < 5) {
+      toast.error('Title is too short (min 5 chars)');
+      return;
+    }
+
+    const isCurrentlyPublished = post?.published || false;
+    const action = isCurrentlyPublished ? 'unpublish' : 'publish';
+    const targetState = !isCurrentlyPublished;
+
+    console.log(`[Editor] Starting ${action} flow...`);
+    setIsPublishing(true);
+    setSaving(true);
+    
     try {
-      const updates: any = { published: !isPublished };
-      if (!isPublished) {
+      const readingTime = calculateReadingTime(content);
+      const updates: any = { 
+        title: title.trim(),
+        content: content,
+        reading_time: readingTime,
+        published: targetState,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (targetState) {
         updates.published_at = new Date().toISOString();
       }
+
+      // Handle Slug Generation
+      const finalSlug = (postId === 'new' || !post?.slug) 
+        ? (title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`)
+        : post.slug;
       
-      // If postId is still 'new', we need to create the post with published=true
+      updates.slug = finalSlug;
+      if (updates.slug.length < 3) updates.slug += '-article';
+
+      console.log(`[Editor] Submitting ${action} with updates:`, updates);
+
+      // We perform the operation directly to ensure absolute consistency
+      let result;
       if (postId === 'new') {
-        updates.title = title || 'Untitled Post';
-        updates.content = content || '';
-      }
-      
-      await handleSave(updates);
-      
-      // If we just created a new post, wait a bit then reload
-      if (postId === 'new') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        window.location.reload();
+        const { data, error } = await supabase
+          .from('posts')
+          .insert({
+            ...updates,
+            author_id: currentUser.id
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        setPostId(data.id);
+        window.history.replaceState(null, '', `/editor/${data.id}`);
       } else {
-        alert(`Post ${action}ed successfully!`);
+        const { data, error } = await supabase
+          .from('posts')
+          .update(updates)
+          .eq('id', postId)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
       }
-    } catch (e) {
-      console.error('Publish failed', e);
-      alert('Publish failed: ' + (e as any).message);
+
+      if (result) {
+        setPost(result);
+        alert(`Successfully ${action}ed!`); // Guaranteed feedback
+        toast.success(`Post ${action}ed!`);
+      }
+    } catch (e: any) {
+      console.error(`[Editor] ${action} failed:`, e);
+      alert(`Error during ${action}: ` + (e.message || 'Check terminal'));
+      toast.error(e.message || `Failed to ${action}`);
+    } finally {
+      setIsPublishing(false);
+      setSaving(false);
     }
-  }
+  };
 
   if (loading && postId !== 'new') {
     return (
@@ -253,8 +317,9 @@ export default function EditorPage() {
 
   return (
     <EditorLayout
-      title={title || 'Untitled Post'}
+      title={title}
       saving={saving}
+      isPublishing={isPublishing}
       onSave={() => handleSave({ content })}
       onTogglePreview={() => setShowPreview(!showPreview)}
       showPreview={showPreview}
@@ -263,73 +328,95 @@ export default function EditorPage() {
       onDelete={handleDelete}
       published={post?.published || false}
     >
-      <div className="flex h-full relative">
-        {/* Editor Pane */}
-        <div className={`h-full flex flex-col bg-white dark:bg-gray-900 ${showPreview ? 'hidden sm:flex sm:w-1/2 border-r border-gray-200 dark:border-gray-800' : 'w-full'}`}>
-
-          {/* Scrollable Container for Title + Cover (Monaco handles its own scroll, so this is tricky) */}
-          {/* Actually, best to keep Title separate from Monaco if Monaco is 100% height */}
-          
-          <div className="flex-none px-6 pt-6 pb-2 max-w-4xl mx-auto w-full">
-             {/* Simplified Cover Image Trigger */}
-             {!coverImage && (
+      <div className="flex h-full bg-white dark:bg-[#0A0A0B]">
+        {/* Editor Main Section */}
+        <div className={`flex-1 flex flex-col min-w-0 transition-opacity duration-300 ${isPublishing ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${showPreview ? 'hidden sm:flex border-r border-gray-100 dark:border-gray-800' : 'flex'}`}>
+          <div className="flex-1 overflow-y-auto px-4 sm:px-12 py-8">
+            <div className="max-w-[720px] mx-auto space-y-8">
+              {/* Cover Image Section */}
+              {coverImage ? (
+                <div className="relative group w-full aspect-[21/9] rounded-2xl overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-900">
+                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                    <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()} className="bg-white/90 backdrop-blur-sm border-none">Change Image</Button>
+                    <Button variant="destructive" size="sm" onClick={removeCover} className="bg-red-500/90 backdrop-blur-sm border-none">Remove</Button>
+                  </div>
+                </div>
+              ) : (
                 <button 
                   onClick={() => document.getElementById('cover-upload')?.click()}
-                  className="group flex items-center gap-2 text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm font-medium mb-4"
+                  className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 flex items-center justify-center gap-3 text-gray-400 hover:text-[#F29F67] hover:border-[#F29F67]/30 transition-all group"
+                  disabled={uploading}
                 >
-                  <ImageIcon className="w-4 h-4" />
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity -ml-2 group-hover:ml-0 duration-200">Add Cover Image</span>
-                  <span className="opacity-100 group-hover:opacity-0 transition-opacity duration-200 absolute pl-6">Add Cover</span>
+                  <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg group-hover:scale-110 transition-transform">
+                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                  </div>
+                  <span className="text-sm font-medium">Add a cover image</span>
                 </button>
-             )}
-              
-             <input
+              )}
+
+              <input
                 id="cover-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleCoverUpload}
                 className="hidden"
-                disabled={uploading}
-             />
+              />
 
-             {coverImage && (
-              <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden mb-8 group">
-                <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
-                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()}>Change</Button>
-                   <Button variant="destructive" size="sm" onClick={removeCover}>Remove</Button>
-                </div>
+              {/* Title Section */}
+              <div className="space-y-4">
+                <TitleEditor
+                  value={title}
+                  onChange={setTitle}
+                  placeholder="The title of your story..."
+                />
               </div>
-             )}
 
-             <TitleEditor
-                value={title}
-                onChange={setTitle}
-                placeholder="Post Title"
-             />
-          </div>
-
-          <div className="flex-1 overflow-hidden w-full max-w-4xl mx-auto">
-            <MdxEditor value={content} onChange={setContent} />
+              {/* MDX Content Area */}
+              <div className="min-h-[500px]">
+                <MdxEditor value={content} onChange={setContent} />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Preview Pane */}
-        <div className={`h-full bg-[#F5F5F7] dark:bg-gray-800 ${showPreview ? 'w-full sm:w-1/2' : 'hidden'}`}>
-          <PreviewPanel 
-            content={content} 
-            title={title}
-            tags={(post?.tags as string[]) || []}
-            readingTime={(post?.reading_time as number) || 0}
-            coverImage={coverImage}
-          />
-        </div>
+        {/* Live Preview Section */}
+        {showPreview && (
+          <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 hidden sm:block">
+            <PreviewPanel 
+              content={content} 
+              title={title}
+              tags={(post?.tags as string[]) || []}
+              readingTime={(post?.reading_time as number) || 0}
+              coverImage={coverImage}
+            />
+          </div>
+        )}
 
-        {/* Settings Sidebar */}
+        {/* Mobile Preview Toggle Overlay (Optional UX) */}
+        {showPreview && (
+          <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 sm:hidden">
+            <div className="p-4 flex items-center justify-between border-b dark:border-gray-800">
+              <span className="font-semibold">Live Preview</span>
+              <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
+            </div>
+            <div className="h-[calc(100vh-60px)] overflow-y-auto">
+              <PreviewPanel 
+                content={content} 
+                title={title}
+                tags={(post?.tags as string[]) || []}
+                readingTime={(post?.reading_time as number) || 0}
+                coverImage={coverImage}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Post Settings Drawer */}
         <PostSettings
           isOpen={showSettings}
           onClose={() => setShowSettings(false)}
-          post={post || {}}
+          post={post || { title, content, tags: [], published: false, slug: '' }}
           onUpdate={handleSave}
         />
       </div>

@@ -1,344 +1,178 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
-import { Profile } from '@/types/database';
+import { createClient } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Globe, Github, Twitter, Calendar, Edit } from 'lucide-react';
+import { User, Globe, Github, Twitter, Calendar, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { ProfileContent } from '@/components/profile/profile-content';
+import { ProfileEditButton } from '@/components/profile/profile-edit-button';
 
-export default function ProfilePage() {
-  const params = useParams();
-  const username = decodeURIComponent(params.username as string);
-  const { user: authUser, loading: authLoading } = useAuth(); // Renamed to authUser
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [postsCount, setPostsCount] = useState(0);
-  const [codeFilesCount, setCodeFilesCount] = useState(0);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [codeFiles, setCodeFiles] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'posts' | 'code' | 'activity'>('posts');
+interface ProfilePageProps {
+  params: {
+    username: string;
+  };
+}
 
-  useEffect(() => {
-    console.log('[ProfilePage] Effect triggered', { username, authLoading, authUserId: authUser?.id });
-    if (!authLoading) {
-        fetchProfile();
-    } else {
-        console.log('[ProfilePage] Auth still loading...');
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const username = decodeURIComponent(params.username).replace(/^@/, '');
+  const supabase = await createClient();
+
+  // 1. Fetch Profile
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[ProfilePage] Error:', error);
+    throw error;
+  }
+
+  if (!profile) {
+    const { data: ciProfiles } = await supabase
+      .from('profiles')
+      .select('username')
+      .ilike('username', username)
+      .limit(1);
+
+    if (ciProfiles && ciProfiles.length > 0) {
+      return redirect(`/profile/${ciProfiles[0].username}`);
     }
-  }, [username, authUser, authLoading]);
-
-  async function fetchProfile() {
-    console.log('[ProfilePage] Fetching profile data for username:', username);
-    try {
-        // Don't set loading true here if it's just a re-fetch due to auth change? 
-        // Better to keep it simple:
-        // setLoading(true); // Don't reset loading to avoid flicker if we already have data?
-        // Actually, if username changes, we MUST set loading.
-        // If only authUser changes, maybe not? 
-        // Let's just set loading=true if !profile or profile.username !== username
-        
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('username', username)
-        .single();
-      
-      console.log('[ProfilePage] Fetch result:', { data, error });
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          setNotFound(true);
-        }
-        throw error;
-      }
-
-      setProfile(data);
-      
-      const isOwnProfile = authUser?.id === data.id;
-
-      // Parallelize fetches
-      const postPromise = supabase
-        .from('posts')
-        .select('*', { count: 'exact' })
-        .eq('author_id', data.id)
-        .eq('published', true)
-        .order('published_at', { ascending: false })
-        .limit(10);
-
-      let filesQuery = supabase
-        .from('code_files')
-        .select('*', { count: 'exact' })
-        .eq('user_id', data.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!isOwnProfile) {
-        filesQuery = filesQuery.eq('is_public', true);
-      }
-
-      const [postsRes, filesRes] = await Promise.all([postPromise, filesQuery]);
-      
-      setPostsCount(postsRes.count || 0);
-      setPosts(postsRes.data || []);
-      
-      setCodeFilesCount(filesRes.count || 0);
-      setCodeFiles(filesRes.data || []);
-
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
+    return notFound();
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
+  // 2. Fetch User Session to check ownership (for private snippets)
+  const { data: { user: viewer } } = await supabase.auth.getUser();
+  const isOwner = viewer?.id === profile.id;
+
+  // 3. Parallel fetching
+  let filesQuery = supabase
+    .from('code_files')
+    .select('*', { count: 'exact' })
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: false })
+    .limit(12);
+
+  if (!isOwner) {
+    filesQuery = filesQuery.eq('is_public', true);
   }
 
-  if (notFound || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold">404</h1>
-          <p className="text-xl text-muted-foreground">User not found</p>
-          <Link href="/">
-            <Button>Go Home</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const [postsRes, filesRes] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('*', { count: 'exact' })
+      .eq('author_id', profile.id)
+      .eq('published', true)
+      .order('published_at', { ascending: false })
+      .limit(12),
+    filesQuery
+  ]);
 
-  const isOwnProfile = authUser?.id === profile.id;
+  const posts = postsRes.data || [];
+  const codeFiles = filesRes.data || [];
+  const counts = {
+    posts: postsRes.count || 0,
+    code: filesRes.count || 0
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-32">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Profile Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-6">
-              {/* Avatar */}
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.username}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  profile.username.charAt(0).toUpperCase()
-                )}
-              </div>
+    <div className="min-h-screen bg-[#F5F5F7] dark:bg-gray-900 pt-28 pb-20">
+      <div className="max-w-4xl mx-auto px-4 space-y-8">
+        {/* Profile Header Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 md:p-10">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
+            {/* Avatar Section */}
+            <div className="shrink-0">
+                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-50 dark:border-gray-900 bg-gray-100 dark:bg-gray-700 overflow-hidden shadow-inner">
+                    {profile.avatar_url ? (
+                        <img
+                            src={profile.avatar_url}
+                            alt={profile.username}
+                            className="w-full h-full object-cover"
+                        />
+                        ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#F29F67] text-4xl font-bold bg-[#F29F67]/10">
+                            {profile.username.charAt(0).toUpperCase()}
+                        </div>
+                    )}
+                </div>
+            </div>
 
-              {/* Info */}
-              <div className="space-y-3">
+            {/* Profile Info */}
+            <div className="flex-1 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold">
+                  <h1 className="text-3xl md:text-4xl font-bold text-[#1E1E2C] dark:text-white">
                     {profile.display_name || profile.username}
                   </h1>
-                  <p className="text-muted-foreground">@{profile.username}</p>
-                </div>
-
-                {profile.bio && (
-                  <p className="text-gray-700 dark:text-gray-300 max-w-2xl">
-                    {profile.bio}
+                  <p className="text-lg text-[#F29F67] font-medium">
+                    @{profile.username}
                   </p>
-                )}
+                </div>
+                
+                <ProfileEditButton profileId={profile.id} username={profile.username} />
+              </div>
 
-                {/* Links */}
-                <div className="flex flex-wrap gap-4 text-sm">
+              {profile.bio && (
+                <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto md:mx-0">
+                  {profile.bio}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2">
+                <div className="flex flex-wrap gap-4">
                   {profile.website_url && (
-                    <a
-                      href={profile.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-600 hover:underline"
-                    >
+                    <a href={profile.website_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-[#F29F67] transition-colors">
                       <Globe className="w-4 h-4" />
                       Website
                     </a>
                   )}
                   {profile.github_username && (
-                    <a
-                      href={`https://github.com/${profile.github_username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:underline"
-                    >
+                    <a href={`https://github.com/${profile.github_username}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
                       <Github className="w-4 h-4" />
                       GitHub
                     </a>
                   )}
                   {profile.twitter_username && (
-                    <a
-                      href={`https://twitter.com/${profile.twitter_username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-400 hover:underline"
-                    >
+                    <a href={`https://twitter.com/${profile.twitter_username}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-blue-400 transition-colors">
                       <Twitter className="w-4 h-4" />
                       Twitter
                     </a>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400 font-medium border-l border-gray-200 dark:border-gray-700 pl-6">
                   <Calendar className="w-4 h-4" />
-                  Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  Joined {new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                 </div>
               </div>
             </div>
-
-            {/* Edit Button */}
-            {isOwnProfile && (
-              <Link href="/settings">
-                <Button variant="outline">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </Link>
-            )}
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">{postsCount}</div>
-            <div className="text-sm text-muted-foreground">Posts</div>
+        {/* Big Stats Row */}
+        <div className="grid grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 text-center shadow-sm">
+            <div className="text-3xl font-bold text-[#1E1E2C] dark:text-white mb-0.5">{counts.posts}</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Articles</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-            <div className="text-3xl font-bold text-green-600">{codeFilesCount}</div>
-            <div className="text-sm text-muted-foreground">Code Files</div>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 text-center shadow-sm">
+            <div className="text-3xl font-bold text-[#1E1E2C] dark:text-white mb-0.5">{counts.code}</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Snippets</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600">0</div>
-            <div className="text-sm text-muted-foreground">Followers</div>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 text-center shadow-sm">
+            <div className="text-3xl font-bold text-[#1E1E2C] dark:text-white mb-0.5">0</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Followers</div>
           </div>
         </div>
 
-        {/* Content Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-            <div className="flex gap-6">
-              <button 
-                onClick={() => setActiveTab('posts')}
-                className={`pb-3 border-b-2 font-medium ${
-                  activeTab === 'posts' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Posts ({postsCount})
-              </button>
-              <button 
-                onClick={() => setActiveTab('code')}
-                className={`pb-3 border-b-2 font-medium ${
-                  activeTab === 'code' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Code Files ({codeFilesCount})
-              </button>
-              <button 
-                onClick={() => setActiveTab('activity')}
-                className={`pb-3 border-b-2 font-medium ${
-                  activeTab === 'activity' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Activity
-              </button>
-            </div>
-          </div>
-
-          {/* Posts Tab */}
-          {activeTab === 'posts' && (
-            <div className="space-y-4">
-              {posts.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No posts yet</p>
-                </div>
-              ) : (
-                posts.map((post) => (
-                  <Link 
-                    key={post.id} 
-                    href={`/post/${post.slug}`}
-                    className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors"
-                  >
-                    <h3 className="font-semibold text-lg mb-1">{post.title}</h3>
-                    {post.excerpt && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {post.excerpt}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>{new Date(post.published_at).toLocaleDateString()}</span>
-                      {post.reading_time && <span>{post.reading_time} min read</span>}
-                      <span>{post.view_count || 0} views</span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Code Files Tab */}
-          {activeTab === 'code' && (
-            <div className="space-y-4">
-              {codeFiles.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No public code files yet</p>
-                </div>
-              ) : (
-                codeFiles.map((file) => (
-                  <div 
-                    key={file.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{file.filename}</h3>
-                        {file.description && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {file.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                            {file.language}
-                          </span>
-                          <span>{new Date(file.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Activity Tab */}
-          {activeTab === 'activity' && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Activity feed coming soon</p>
-            </div>
-          )}
-        </div>
+        {/* Detailed Content */}
+        <ProfileContent 
+            initialPosts={posts} 
+            initialCodeFiles={codeFiles} 
+            counts={counts}
+            username={profile.username}
+        />
       </div>
     </div>
   );

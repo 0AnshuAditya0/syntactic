@@ -33,7 +33,7 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     // Smooth transition out
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 500); // 500ms delay as requested
+    }, 200); // Reduced from 500ms for better performance
 
     return () => clearTimeout(timer);
   }, [pathname]);

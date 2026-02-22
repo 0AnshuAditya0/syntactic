@@ -3,6 +3,7 @@
 import Editor, { OnMount } from '@monaco-editor/react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface MdxEditorProps {
   value: string;
@@ -38,7 +39,7 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
   if (!mounted) return null;
 
   return (
-    <div className="h-full w-full">
+    <div className="h-[70vh] w-full rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm">
       <Editor
         height="100%"
         defaultLanguage="markdown"
@@ -49,11 +50,28 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
           minimap: { enabled: false },
           wordWrap: 'on',
           readOnly: disabled,
+          fontSize: 16,
+          lineHeight: 28,
+          fontFamily: "'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace",
+          fontLigatures: true,
+          cursorSmoothCaretAnimation: 'on',
+          smoothScrolling: true,
+          padding: { top: 20, bottom: 20 },
+          lineNumbers: 'off',
+          glyphMargin: false,
+          folding: false,
+          lineDecorationsWidth: 0,
+          lineNumbersMinChars: 0,
+          renderLineHighlight: 'none',
+          scrollbar: {
+            vertical: 'hidden',
+            horizontal: 'hidden'
+          }
         }}
         onMount={handleEditorDidMount}
         loading={
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            Loading editor...
+          <div className="flex items-center justify-center h-full text-muted-foreground bg-gray-50 dark:bg-gray-900/50">
+            <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         }
       />

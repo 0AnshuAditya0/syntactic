@@ -1,14 +1,13 @@
-'use client';
-
 import { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Settings, Eye, Code, Trash2 } from 'lucide-react';
+import { ArrowLeft, Settings, Eye, Code, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface EditorLayoutProps {
   children: ReactNode;
   title: string;
   saving: boolean;
+  isPublishing?: boolean;
   onSave: () => void;
   onTogglePreview: () => void;
   showPreview: boolean;
@@ -22,6 +21,7 @@ export function EditorLayout({
   children,
   title,
   saving,
+  isPublishing = false,
   onSave,
   onTogglePreview,
   showPreview,
@@ -31,86 +31,103 @@ export function EditorLayout({
   published,
 }: EditorLayoutProps) {
   return (
-// Adjusting layout to avoid navbar overlap
-    <div className="h-screen pt-20 flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
-      {/* Toolbar */}
-      <header className="h-16 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-20 shrink-0">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="h-screen pt-20 flex flex-col bg-white dark:bg-[#0A0A0B] overflow-hidden font-sans">
+      {/* Header Toolbar */}
+      <header className="h-14 border-b border-gray-100 dark:border-gray-800/50 flex items-center justify-between px-4 bg-white/70 dark:bg-[#0A0A0B]/70 backdrop-blur-xl z-30 shrink-0">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/dashboard" 
+            className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           
-          <div className="flex flex-col">
-            <h1 className="font-semibold text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-md text-base sm:text-lg leading-tight">
-              {title || 'Untitled Post'}
-            </h1>
-            {saving ? (
-              <span className="text-[10px] uppercase tracking-wider font-bold text-[#F29F67] animate-pulse">
-                Saving...
-              </span>
-            ) : (
-                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-300 dark:text-gray-600">
-                Saved
-              </span>
-            )}
+          <div className="h-4 w-px bg-gray-100 dark:bg-gray-800" />
+          
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-medium text-gray-400 dark:text-gray-500 truncate max-w-[120px] sm:max-w-xs uppercase tracking-tight">
+              {title || 'Untitled Story'}
+            </span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+              {saving || isPublishing ? (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F29F67] animate-pulse" />
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {isPublishing ? 'Syncing...' : 'Saving...'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cloud</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={onTogglePreview}
-            className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="hidden sm:flex text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 h-8 px-3 rounded-lg"
           >
             {showPreview ? (
-              <>
-                <Code className="w-4 h-4 mr-2" />
-                Editor
-              </>
+              <><Code className="w-4 h-4 mr-2" /> Editor</>
             ) : (
-              <>
-                <Eye className="w-4 h-4 mr-2" />
-                Preview
-              </>
+              <><Eye className="w-4 h-4 mr-2" /> Preview</>
             )}
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onOpenSettings} 
+            className="h-8 w-8 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg"
+          >
+            <Settings className="w-4 h-4" />
           </Button>
 
           {onDelete && (
              <Button
               variant="ghost" 
               size="icon"
-              className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="h-8 w-8 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors rounded-lg"
               onClick={onDelete}
-              title="Delete Post"
+              title="Delete Forever"
+              disabled={isPublishing || saving}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
 
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
-
-          <Button variant="ghost" size="icon" onClick={onOpenSettings} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-            <Settings className="w-5 h-5" />
-          </Button>
+          <div className="h-4 w-px bg-gray-100 dark:bg-gray-800 mx-1" />
 
           <Button 
             size="sm" 
-            className={`font-medium shadow-sm transition-all px-6 rounded-full ${
+            className={`h-8 px-5 rounded-lg text-xs font-bold transition-all shadow-sm ${
               published 
-                ? "bg-yellow-500 hover:bg-yellow-600 text-white border-none" 
-                : "bg-black dark:bg-white text-white dark:text-black hover:opacity-90"
+                ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
+                : "bg-[#F29F67] hover:bg-[#E28F57] text-white border-none"
             }`}
             onClick={onPublish}
+            disabled={isPublishing || saving}
           >
-            {published ? 'Unpublish' : 'Publish'}
+            {isPublishing ? (
+              <Loader2 className="w-3 h-3 animate-spin mr-2" />
+            ) : null}
+            {published ? 'Published' : 'Publish Story'}
           </Button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative">
-        {children}
+      {/* Surface Canvas */}
+      <main className="flex-1 overflow-hidden relative bg-[#FAFAFB] dark:bg-[#0A0A0B]">
+        <div className="h-full w-full">
+          {children}
+        </div>
       </main>
     </div>
   );
