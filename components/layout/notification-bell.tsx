@@ -10,12 +10,24 @@ import {
 } from '@/components/ui/popover';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import Link from 'next/link';
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
+
+interface Notification {
+  id: string;
+  type: string;
+  is_read: boolean;
+  read: boolean;
+  created_at: string;
+  actor?: {
+    username?: string;
+    avatar_url?: string;
+  };
+}
 
 export function NotificationBell() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
@@ -24,7 +36,7 @@ export function NotificationBell() {
       fetchNotifications();
       subscribeToNotifications();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchNotifications() {
     if (!user) return;
@@ -53,7 +65,7 @@ export function NotificationBell() {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        (_payload) => {
           fetchNotifications();
         }
       )
@@ -86,13 +98,6 @@ export function NotificationBell() {
     }
   }
 
-  function getNotificationLink(notification: any) {
-    // Ideally we'd fetch the post slug, but for now we'll link to blog home or specific post if we had the slug
-    // Since we only store resource_id (post_id), we might need to fetch the slug or just link to /blog
-    // For now, let's assume we can navigate to the post by ID if we implement that route, or just /blog
-    return `/blog`; 
-  }
-
   if (!user) return null;
 
   return (
@@ -121,14 +126,20 @@ export function NotificationBell() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-                  !notification.is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                }`}
+                className={`p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${!notification.is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
                     {notification.actor?.avatar_url ? (
-                      <img src={notification.actor.avatar_url} alt="" className="w-full h-full object-cover" />
+                      <Image
+                        src={notification.actor.avatar_url}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs font-bold">
                         {notification.actor?.username?.charAt(0).toUpperCase()}

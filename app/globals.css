@@ -176,6 +176,26 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background;
+    color: var(--text-dark);
   }
+
+  .dark body {
+    color: #ffffff;
+  }
+}
+
+/* Force light text regardless of theme or prism overrides */
+.force-dark-text,
+.force-dark-text * {
+  color: #1E1E2C !important;
+}
+
+/* Line 152 */
+#post-excerpt-content,
+#post-excerpt-content p {
+  color: #1E1E2C !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  -webkit-text-fill-color: #1E1E2C !important;
 }

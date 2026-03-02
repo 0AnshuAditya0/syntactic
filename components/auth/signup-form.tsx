@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase/client';
-import { Github, Loader2, KeyRound } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { PrivateKeyModal } from '@/components/auth/private-key-modal';
 
 export function SignupForm() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [generatedKey, setGeneratedKey] = useState('');
@@ -18,7 +18,7 @@ export function SignupForm() {
   // Actually, we want to auto-generate AFTER signup.
   // We can add a button "Generate My Key" or do it automatically.
   // Given the flow: "Signup" -> "OAuth" -> "Welcome".
-  
+
   useEffect(() => {
     // If we land here and are logged in, we can check if we should generate a key.
     // However, usually this form is for UNLOGGED users.
@@ -36,15 +36,16 @@ export function SignupForm() {
       });
 
       if (error) throw error;
-    } catch (error: any) {
-      toast.error('Signup failed', { description: error.message });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error('Signup failed', { description: err.message });
       setLoading(false);
     }
   };
 
   // If user is logged in (from redirect), try to generate key if they don't have one?
   // We'll add a separate useEffect or button for that flow.
-  
+
   return (
     <>
       <div className="grid gap-4">
@@ -103,8 +104,8 @@ export function SignupForm() {
       </div>
 
       {showKeyModal && (
-        <PrivateKeyModal 
-          privateKey={generatedKey} 
+        <PrivateKeyModal
+          privateKey={generatedKey}
           onClose={() => setShowKeyModal(false)}
         />
       )}

@@ -8,6 +8,7 @@ import { CommentForm } from './comment-form';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface CommentItemProps {
   comment: any;
@@ -26,7 +27,7 @@ export function CommentItem({ comment, postId, onRefresh, level = 0 }: CommentIt
 
   async function handleDelete() {
     if (!confirm('Are you sure you want to delete this comment?')) return;
-    
+
     setIsDeleting(true);
     try {
       const { error } = await supabase
@@ -35,7 +36,7 @@ export function CommentItem({ comment, postId, onRefresh, level = 0 }: CommentIt
         .eq('id', comment.id);
 
       if (error) throw error;
-      
+
       toast.success('Comment deleted');
       onRefresh();
     } catch (error) {
@@ -47,16 +48,19 @@ export function CommentItem({ comment, postId, onRefresh, level = 0 }: CommentIt
   }
 
   return (
-    <div className={`space-y-4 ${level > 0 ? 'ml-8 pl-4 border-l-2 border-gray-100 dark:border-gray-800' : ''}`}>
+    <div className={`space-y-4 ${level > 0 ? 'ml-8 pl-4 border-l-2 border-gray-200' : ''}`}>
       <div className="flex gap-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
             {comment.profiles?.avatar_url ? (
-              <img
+              <Image
                 src={comment.profiles.avatar_url}
                 alt={comment.profiles.username}
+                width={40}
+                height={40}
                 className="w-full h-full rounded-full object-cover"
+                unoptimized
               />
             ) : (
               (comment.profiles?.username || '?').charAt(0).toUpperCase()
@@ -88,7 +92,7 @@ export function CommentItem({ comment, postId, onRefresh, level = 0 }: CommentIt
             )}
           </div>
 
-          <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <div className="text-sm text-gray-700 whitespace-pre-wrap">
             {comment.content}
           </div>
 

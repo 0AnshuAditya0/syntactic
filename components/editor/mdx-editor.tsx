@@ -19,7 +19,7 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
     setMounted(true);
   }, []);
 
-  const handleEditorDidMount: OnMount = (editor, monaco) => {
+  const handleEditorDidMount: OnMount = (editor, _monaco) => {
     // Configure editor settings
     editor.updateOptions({
       minimap: { enabled: false },

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
 
         // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
             .from('covers')
             .upload(filePath, buffer, {
                 contentType: file.type,
@@ -77,10 +77,11 @@ export async function POST(request: NextRequest) {
             path: filePath
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Cover upload error:', error);
+        const message = error instanceof Error ? error.message : 'Upload failed';
         return NextResponse.json(
-            { error: error.message || 'Upload failed' },
+            { error: message },
             { status: 500 }
         );
     }

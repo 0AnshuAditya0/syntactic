@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { User, Globe, Github, Twitter, Calendar, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { User, Globe, Github, Twitter, Calendar } from 'lucide-react';
+import Image from 'next/image';
 import { ProfileContent } from '@/components/profile/profile-content';
 import { ProfileEditButton } from '@/components/profile/profile-edit-button';
 
@@ -83,19 +82,22 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
             {/* Avatar Section */}
             <div className="shrink-0">
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-50 dark:border-gray-900 bg-gray-100 dark:bg-gray-700 overflow-hidden shadow-inner">
-                    {profile.avatar_url ? (
-                        <img
-                            src={profile.avatar_url}
-                            alt={profile.username}
-                            className="w-full h-full object-cover"
-                        />
-                        ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#F29F67] text-4xl font-bold bg-[#F29F67]/10">
-                            {profile.username.charAt(0).toUpperCase()}
-                        </div>
-                    )}
-                </div>
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-50 dark:border-gray-900 bg-gray-100 dark:bg-gray-700 overflow-hidden shadow-inner">
+                {profile.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.username}
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[#F29F67] text-4xl font-bold bg-[#F29F67]/10">
+                    {profile.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Profile Info */}
@@ -109,7 +111,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     @{profile.username}
                   </p>
                 </div>
-                
+
                 <ProfileEditButton profileId={profile.id} username={profile.username} />
               </div>
 
@@ -167,11 +169,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
 
         {/* Detailed Content */}
-        <ProfileContent 
-            initialPosts={posts} 
-            initialCodeFiles={codeFiles} 
-            counts={counts}
-            username={profile.username}
+        <ProfileContent
+          initialPosts={posts}
+          initialCodeFiles={codeFiles}
+          counts={counts}
+          username={profile.username}
         />
       </div>
     </div>

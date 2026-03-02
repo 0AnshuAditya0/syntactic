@@ -2,20 +2,38 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { User, FileCode, Clock, Eye, AlertCircle, Loader2 } from 'lucide-react';
+import { User, FileCode, Clock, Eye, Loader2 } from 'lucide-react';
+
+interface Post {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  published_at: string;
+  reading_time?: number;
+  view_count?: number;
+}
+
+interface CodeFile {
+  id: string;
+  filename?: string;
+  description?: string;
+  language: string;
+  created_at: string;
+}
 
 interface ProfileContentProps {
-  initialPosts: any[];
-  initialCodeFiles: any[];
+  initialPosts: Post[];
+  initialCodeFiles: CodeFile[];
   counts: { posts: number; code: number };
   username: string;
 }
 
-export function ProfileContent({ 
-  initialPosts, 
-  initialCodeFiles, 
+export function ProfileContent({
+  initialPosts,
+  initialCodeFiles,
   counts,
-  username 
+  username
 }: ProfileContentProps) {
   const [activeTab, setActiveTab] = useState<'posts' | 'code' | 'activity'>('posts');
 
@@ -26,11 +44,10 @@ export function ProfileContent({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-4 text-sm font-semibold uppercase tracking-wider transition-all relative ${
-              activeTab === tab 
-              ? 'text-[#F29F67]' 
-              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
+            className={`flex-1 py-4 text-sm font-semibold uppercase tracking-wider transition-all relative ${activeTab === tab
+                ? 'text-[#F29F67]'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
           >
             {tab === 'posts' && `Posts (${counts.posts})`}
             {tab === 'code' && `Snippets (${counts.code})`}
@@ -52,8 +69,8 @@ export function ProfileContent({
               </div>
             ) : (
               initialPosts.map((post) => (
-                <Link 
-                  key={post.id} 
+                <Link
+                  key={post.id}
                   href={`/post/${post.slug}`}
                   className="block p-5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 hover:border-[#F29F67]/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
                 >
@@ -79,7 +96,7 @@ export function ProfileContent({
               </div>
             ) : (
               initialCodeFiles.map((file) => (
-                <div 
+                <div
                   key={file.id}
                   className="p-5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 hover:border-[#F29F67]/50 transition-all duration-200"
                 >

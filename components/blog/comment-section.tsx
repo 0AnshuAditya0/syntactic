@@ -88,7 +88,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
       {user ? (
         <CommentForm postId={postId} onCommentAdded={fetchComments} />
       ) : (
-        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center">
+        <div className="bg-gray-50 p-6 rounded-lg text-center">
           <p className="text-muted-foreground mb-4">Log in to join the discussion</p>
           <Link href="/auth/login">
             <Button>Log In</Button>

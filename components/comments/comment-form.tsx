@@ -49,8 +49,8 @@ export function CommentForm({ postId, parentId, onCommentAdded, onCancel, placeh
 
   if (!user) {
     return (
-      <div className="text-center py-6 bg-[#F5F5F7] dark:bg-gray-800 rounded-xl border-2 border-gray-300 dark:border-gray-700">
-        <p className="text-gray-600 dark:text-gray-400 mb-3">Sign in to join the conversation</p>
+      <div className="text-center py-6 bg-[#F5F5F7] rounded-xl border border-gray-200">
+        <p className="text-gray-600 mb-3">Sign in to join the conversation</p>
         <a href="/auth/login">
           <Button size="sm" className="bg-[#F29F67] hover:bg-[#E08D55] text-[#1E1E2C]">
             Sign In
@@ -66,7 +66,7 @@ export function CommentForm({ postId, parentId, onCommentAdded, onCancel, placeh
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
-        className="w-full min-h-[100px] p-4 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-[#1E1E2C] dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#F29F67] resize-none"
+        className="w-full min-h-[100px] p-4 rounded-xl border border-gray-300 bg-white text-[#1E1E2C] placeholder:text-gray-400 focus:outline-none focus:border-[#F29F67] resize-none"
         disabled={isSubmitting}
       />
       <div className="flex items-center justify-between">

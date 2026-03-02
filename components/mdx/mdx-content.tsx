@@ -34,6 +34,7 @@ export async function MDXContent({ source }: MDXContentProps) {
 
   return (
     <div className="prose dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-code:text-pink-600 dark:prose-code:text-pink-400 prose-pre:bg-gray-900 prose-pre:text-gray-100">
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <MDXRemote source={source} components={components} options={options as any} />
     </div>
   );

@@ -102,7 +102,7 @@ export function CommentList({ postId }: CommentListProps) {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-red-600">{error}</p>
         <button
           onClick={fetchComments}
           className="mt-4 text-[#F29F67] hover:text-[#E08D55] font-medium"
@@ -118,7 +118,7 @@ export function CommentList({ postId }: CommentListProps) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <MessageSquare className="w-5 h-5 text-[#F29F67]" />
-        <h3 className="text-2xl font-bold text-[#1E1E2C] dark:text-white">
+        <h3 className="text-2xl font-bold text-[#1E1E2C]">
           Comments ({comments.length})
         </h3>
       </div>
@@ -128,9 +128,9 @@ export function CommentList({ postId }: CommentListProps) {
 
       {/* Comments */}
       {comments.length === 0 ? (
-        <div className="text-center py-12 bg-[#F5F5F7] dark:bg-gray-800 rounded-2xl border-2 border-gray-300 dark:border-gray-700">
+        <div className="text-center py-12 bg-[#F5F5F7] rounded-2xl border border-gray-200">
           <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-gray-600 dark:text-gray-400">No comments yet. Be the first to comment!</p>
+          <p className="text-gray-600">No comments yet. Be the first to comment!</p>
         </div>
       ) : (
         <div className="space-y-6">

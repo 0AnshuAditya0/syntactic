@@ -125,7 +125,7 @@ export default async function BlogPage() {
                       </h2>
 
                       {featuredPost.excerpt && (
-                        <p className="text-gray-500 text-base leading-relaxed line-clamp-3">
+                        <p className="text-base leading-relaxed line-clamp-3" style={{ color: '#333333' }}>
                           {featuredPost.excerpt}
                         </p>
                       )}
@@ -259,7 +259,7 @@ export default async function BlogPage() {
                       </Link>
 
                       {post.excerpt && (
-                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                        <p className="text-sm leading-relaxed line-clamp-2" style={{ color: '#666666' }}>
                           {post.excerpt}
                         </p>
                       )}
