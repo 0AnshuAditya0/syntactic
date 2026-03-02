@@ -1,14 +1,14 @@
 export type Language = 'javascript' | 'typescript' | 'python' | 'java' | 'cpp' | 'c' | 'go' | 'rust';
 
 export const templates: Record<Language, string> = {
-    javascript: `// follow me on github www.github.com/0AnshuAditya0
+    javascript: `
 console.log("Hello, World!");
 `,
 
-    python: `# follow me on github www.github.com/0AnshuAditya0
+    python: `
 print("Hello, World!")`,
 
-    java: `// follow me on github www.github.com/0AnshuAditya0
+    java: `
 public class Main {
     public static void main(String[] args) {
         System.out.println("Hello, World!");
@@ -17,7 +17,7 @@ public class Main {
 
     cpp: `#include <iostream>
 using namespace std;
-// follow me on github www.github.com/0AnshuAditya0
+
 int main() {
     cout << "Hello, World!" << endl;
     
@@ -25,14 +25,14 @@ int main() {
 }`,
 
     c: `#include <stdio.h>
-// follow me on github www.github.com/0AnshuAditya0
+
 int main() {
     printf("Hello, World!\\n");
     
     return 0;
 }`,
 
-    typescript: `// follow me on github www.github.com/0AnshuAditya0
+    typescript: `
 const message: string = "Hello, World!";
 console.log(message);
 

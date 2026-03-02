@@ -25,10 +25,8 @@ export default async function AnalyticsPage() {
 
   const totalViews = posts?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0;
 
-  // Fetch likes count directly from post_likes table for user's posts
-  // First get all post IDs
   const postIds = posts?.map(p => p.id) || [];
-  
+
   let totalLikes = 0;
   if (postIds.length > 0) {
     const { count } = await supabase
@@ -38,7 +36,6 @@ export default async function AnalyticsPage() {
     totalLikes = count || 0;
   }
 
-  // Better query for top posts
   const { data: postsWithLikes } = await supabase
     .from('posts')
     .select(`

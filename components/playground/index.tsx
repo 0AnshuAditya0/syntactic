@@ -17,9 +17,8 @@ export default function Playground() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const direction = isMobile ? 'vertical' : 'horizontal';
 
-  // Theme state for EDITOR/OUTPUT ONLY. The UI generally stays light/neutral.
   const [editorTheme, setEditorTheme] = useState<'light' | 'dark'>('light');
-  
+
   const [language, setLanguage] = useState<Language>('javascript');
   const [code, setCode] = useState(templates.javascript);
   const [output, setOutput] = useState('');
@@ -70,20 +69,20 @@ export default function Playground() {
       {isSaveOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm relative">
-             {/* Close button for overlay */}
-             <button 
-                onClick={() => setIsSaveOpen(false)}
-                className="absolute -top-3 -right-3 p-1 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-500 hover:text-gray-900 border z-10"
-             >
-               <span className="sr-only">Close</span>
-               <X className="w-4 h-4" />
-             </button>
-            <SaveDialog 
+            {/* Close button for overlay */}
+            <button
+              onClick={() => setIsSaveOpen(false)}
+              className="absolute -top-3 -right-3 p-1 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-500 hover:text-gray-900 border z-10"
+            >
+              <span className="sr-only">Close</span>
+              <X className="w-4 h-4" />
+            </button>
+            <SaveDialog
               code={code}
               language={language}
               onSaved={(id) => {
                 setIsSaveOpen(false);
-                // Optionally show success toast
+
                 alert('Saved successfully!');
               }}
             />
@@ -92,7 +91,7 @@ export default function Playground() {
       )}
 
       {/* Navigation - Always Light/Neutral */}
-      <PlaygroundNav 
+      <PlaygroundNav
         language={language}
         onLanguageChange={handleLanguageChange}
         onRun={handleRun}
@@ -103,17 +102,17 @@ export default function Playground() {
         theme={editorTheme}
         onThemeToggle={() => setEditorTheme(prev => prev === 'light' ? 'dark' : 'light')}
       />
-      
+
       {/* Resizable Panels */}
       <div className="flex-1 overflow-hidden relative">
-        <PanelGroup 
-          direction={direction} 
+        <PanelGroup
+          direction={direction}
           autoSaveId="playground-layout"
           key={direction} // Force re-render when direction changes to avoid layout bugs
         >
           {/* Editor Panel */}
           <Panel defaultSize={60} minSize={30} className={editorTheme === 'dark' ? 'bg-[#0D1117]' : 'bg-white'}>
-            <CodeEditorWrapper 
+            <CodeEditorWrapper
               value={code}
               onChange={setCode}
               language={language}
@@ -121,22 +120,22 @@ export default function Playground() {
               onRun={handleRun}
             />
           </Panel>
-          
+
           <ResizeHandle direction={direction} />
-          
+
           {/* Output Panel */}
-          <Panel 
-            defaultSize={40} 
-            minSize={20} 
+          <Panel
+            defaultSize={40}
+            minSize={20}
             className={`
               ${editorTheme === 'dark' ? 'bg-[#0D1117]' : 'bg-[#F8F9FA]'}
-              ${direction === 'horizontal' 
-                ? (editorTheme === 'dark' ? 'border-l-2 border-[#30363D]' : 'border-l-2 border-[#E5E7EB]') 
+              ${direction === 'horizontal'
+                ? (editorTheme === 'dark' ? 'border-l-2 border-[#30363D]' : 'border-l-2 border-[#E5E7EB]')
                 : (editorTheme === 'dark' ? 'border-t-2 border-[#30363D]' : 'border-t-2 border-[#E5E7EB]')
               }
             `}
           >
-            <OutputPanel 
+            <OutputPanel
               output={output}
               error={error}
               onClear={handleClear}
@@ -146,12 +145,12 @@ export default function Playground() {
           </Panel>
         </PanelGroup>
       </div>
-      
+
       {/* Status Bar */}
-      <StatusBar 
-        theme={editorTheme} 
+      <StatusBar
+        theme={editorTheme}
         onThemeToggle={() => setEditorTheme(prev => prev === 'light' ? 'dark' : 'light')}
-        isRunningLocally={language === 'javascript'} 
+        isRunningLocally={language === 'javascript'}
       />
     </div>
   );
