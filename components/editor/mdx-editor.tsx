@@ -39,24 +39,24 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
   if (!mounted) return null;
 
   return (
-    <div className="h-[70vh] w-full rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm">
+    <div className="h-[70vh] w-full rounded-3xl overflow-hidden border-[4px] border-gray-300 shadow-[0_4px_25px_-5px_rgba(0,0,0,0.05)] bg-white">
       <Editor
         height="100%"
         defaultLanguage="markdown"
         value={value}
         onChange={(value) => onChange(value || '')}
-        theme={theme === 'dark' ? 'vs-dark' : 'light'}
+        theme="light"
         options={{
           minimap: { enabled: false },
           wordWrap: 'on',
           readOnly: disabled,
-          fontSize: 16,
-          lineHeight: 28,
+          fontSize: 18,
+          lineHeight: 30,
           fontFamily: "'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace",
           fontLigatures: true,
           cursorSmoothCaretAnimation: 'on',
           smoothScrolling: true,
-          padding: { top: 20, bottom: 20 },
+          padding: { top: 24, bottom: 24 },
           lineNumbers: 'off',
           glyphMargin: false,
           folding: false,
@@ -66,11 +66,11 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
           scrollbar: {
             vertical: 'hidden',
             horizontal: 'hidden'
-          }
+          },
         }}
         onMount={handleEditorDidMount}
         loading={
-          <div className="flex items-center justify-center h-full text-muted-foreground bg-gray-50 dark:bg-gray-900/50">
+          <div className="flex items-center justify-center h-full text-muted-foreground bg-white">
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         }

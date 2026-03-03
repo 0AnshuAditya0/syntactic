@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter(); // Use router
-  
+
   // Track the actual ID we are working with (starts as 'new' or UUID)
   const [postId, setPostId] = useState<string>(params.id as string);
   const { user, tempUser } = useAuth();
@@ -70,7 +70,7 @@ export default function EditorPage() {
       console.warn('Cannot save: No authenticated user found');
       return null;
     }
-    
+
     // Auto-save lock: Skip only if NOT forced and already saving a new post
     if (postId === 'new' && saving && !options.force) {
       console.log('[Editor] Skipping auto-save: Creation already in progress');
@@ -84,7 +84,7 @@ export default function EditorPage() {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
-        
+
         const { data, error } = await supabase
           .from('posts')
           .insert({
@@ -107,7 +107,7 @@ export default function EditorPage() {
         // Use router for a cleaner transition if needed, or just stay on page
         window.history.replaceState(null, '', `/editor/${data.id}`);
         console.log('[Editor] New post created ID:', data.id);
-        return data; 
+        return data;
       } else {
         const postData = {
           ...updates,
@@ -121,7 +121,7 @@ export default function EditorPage() {
           .single();
 
         if (error) throw error;
-        
+
         setPost((prev: any) => ({ ...prev, ...postData }));
         setLastSavedContent(content);
         return data;
@@ -198,7 +198,7 @@ export default function EditorPage() {
 
   async function handleDelete() {
     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
-    
+
     setSaving(true);
     try {
       if (postId !== 'new') {
@@ -206,7 +206,7 @@ export default function EditorPage() {
           .from('posts')
           .delete()
           .eq('id', postId);
-        
+
         if (error) throw error;
       }
       router.push('/dashboard'); // Redirect to dashboard after delete
@@ -235,26 +235,26 @@ export default function EditorPage() {
     console.log(`[Editor] Starting ${action} flow...`);
     setIsPublishing(true);
     setSaving(true);
-    
+
     try {
       const readingTime = calculateReadingTime(content);
-      const updates: any = { 
+      const updates: any = {
         title: title.trim(),
         content: content,
         reading_time: readingTime,
         published: targetState,
         updated_at: new Date().toISOString()
       };
-      
+
       if (targetState) {
         updates.published_at = new Date().toISOString();
       }
 
       // Handle Slug Generation
-      const finalSlug = (postId === 'new' || !post?.slug) 
+      const finalSlug = (postId === 'new' || !post?.slug)
         ? (title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`)
         : post.slug;
-      
+
       updates.slug = finalSlug;
       if (updates.slug.length < 3) updates.slug += '-article';
 
@@ -271,10 +271,10 @@ export default function EditorPage() {
           })
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
-        
+
         setPostId(data.id);
         window.history.replaceState(null, '', `/editor/${data.id}`);
       } else {
@@ -284,7 +284,7 @@ export default function EditorPage() {
           .eq('id', postId)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       }
@@ -328,32 +328,35 @@ export default function EditorPage() {
       onDelete={handleDelete}
       published={post?.published || false}
     >
-      <div className="flex h-full bg-white dark:bg-[#0A0A0B]">
+      <div className="flex h-full">
         {/* Editor Main Section */}
-        <div className={`flex-1 flex flex-col min-w-0 transition-opacity duration-300 ${isPublishing ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${showPreview ? 'hidden sm:flex border-r border-gray-100 dark:border-gray-800' : 'flex'}`}>
-          <div className="flex-1 overflow-y-auto px-4 sm:px-12 py-8">
-            <div className="max-w-[720px] mx-auto space-y-8">
-              {/* Cover Image Section */}
-              {coverImage ? (
-                <div className="relative group w-full aspect-[21/9] rounded-2xl overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-900">
-                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                    <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()} className="bg-white/90 backdrop-blur-sm border-none">Change Image</Button>
-                    <Button variant="destructive" size="sm" onClick={removeCover} className="bg-red-500/90 backdrop-blur-sm border-none">Remove</Button>
+        <div className={`flex-1 flex flex-col min-w-0 transition-opacity duration-300 ${isPublishing ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${showPreview ? 'hidden sm:flex border-r border-gray-300' : 'flex'}`}>
+          <div className="flex-1 overflow-y-auto px-4 sm:px-12 py-12">
+            <div className="max-w-[850px] mx-auto space-y-12 bg-white p-16 rounded-[3rem] border-[4px] border-gray-300 shadow-[0_2px_45px_-10px_rgba(0,0,0,0.06)]">
+              {/* Cover Image Section - Prominent 'Cover Page' feel */}
+              <div className="space-y-4">
+                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block">Story Cover</label>
+                {coverImage ? (
+                  <div className="relative group w-full aspect-[21/9] rounded-[2rem] overflow-hidden shadow-md border-[3px] border-white ring-1 ring-gray-100">
+                    <img src={coverImage} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                      <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()} className="bg-white/95 border-none shadow-lg">Change Cover</Button>
+                      <Button variant="destructive" size="sm" onClick={removeCover} className="bg-red-500/95 border-none shadow-lg">Remove</Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => document.getElementById('cover-upload')?.click()}
-                  className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 flex items-center justify-center gap-3 text-gray-400 hover:text-[#F29F67] hover:border-[#F29F67]/30 transition-all group"
-                  disabled={uploading}
-                >
-                  <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg group-hover:scale-110 transition-transform">
-                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                  </div>
-                  <span className="text-sm font-medium">Add a cover image</span>
-                </button>
-              )}
+                ) : (
+                  <button
+                    onClick={() => document.getElementById('cover-upload')?.click()}
+                    className="w-full h-48 rounded-[2rem] border-[3px] border-dashed border-gray-200 flex flex-col items-center justify-center gap-4 text-gray-400 hover:text-[#F29F67] hover:border-[#F29F67]/50 transition-all bg-gray-50/50 group"
+                    disabled={uploading}
+                  >
+                    <div className="p-4 bg-white rounded-[1.5rem] shadow-sm border-2 border-transparent group-hover:border-[#F29F67]/20 transition-all">
+                      {uploading ? <Loader2 className="w-8 h-8 animate-spin text-[#F29F67]" /> : <ImageIcon className="w-8 h-8 opacity-40 group-hover:opacity-100" />}
+                    </div>
+                    <span className="text-sm font-bold tracking-tight">Tap to Upload Cover Page</span>
+                  </button>
+                )}
+              </div>
 
               <input
                 id="cover-upload"
@@ -365,16 +368,20 @@ export default function EditorPage() {
 
               {/* Title Section */}
               <div className="space-y-4">
+                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block px-2">Main Title</label>
                 <TitleEditor
                   value={title}
                   onChange={setTitle}
-                  placeholder="The title of your story..."
+                  placeholder="Tell your story..."
                 />
               </div>
 
-              {/* MDX Content Area */}
-              <div className="min-h-[500px]">
-                <MdxEditor value={content} onChange={setContent} />
+              {/* MDX Writing Box Section */}
+              <div className="space-y-4">
+                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block px-2">Writing Area</label>
+                <div className="min-h-[500px]">
+                  <MdxEditor value={content} onChange={setContent} />
+                </div>
               </div>
             </div>
           </div>
@@ -383,8 +390,8 @@ export default function EditorPage() {
         {/* Live Preview Section */}
         {showPreview && (
           <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 hidden sm:block">
-            <PreviewPanel 
-              content={content} 
+            <PreviewPanel
+              content={content}
               title={title}
               tags={(post?.tags as string[]) || []}
               readingTime={(post?.reading_time as number) || 0}
@@ -401,8 +408,8 @@ export default function EditorPage() {
               <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
             </div>
             <div className="h-[calc(100vh-60px)] overflow-y-auto">
-              <PreviewPanel 
-                content={content} 
+              <PreviewPanel
+                content={content}
                 title={title}
                 tags={(post?.tags as string[]) || []}
                 readingTime={(post?.reading_time as number) || 0}
