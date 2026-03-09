@@ -17,7 +17,7 @@ interface TableSchema {
 
 interface TableVisualizerProps {
   schema: TableSchema[];
-  rows: Record<string, any>[];
+  rows: Record<string, unknown>[];
   columns: string[];
   message?: string;
   executionTime?: number;

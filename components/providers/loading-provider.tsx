@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -47,10 +48,14 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
           <div className="flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500">
              {/* Cat Animation Container */}
             <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 bg-white/5 backdrop-blur-sm">
-              <img 
-                src="/cat_ani.gif" 
-                alt="Loading..." 
-                className="w-full h-full object-cover"
+              <Image
+                src="/cat_ani.gif"
+                alt="Loading..."
+                fill
+                sizes="(min-width: 640px) 256px, 192px"
+                className="object-cover"
+                priority
+                unoptimized
               />
             </div>
             {/* Optional Loading Text if message is present, or default */}

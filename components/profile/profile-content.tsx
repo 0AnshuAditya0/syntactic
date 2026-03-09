@@ -33,7 +33,6 @@ export function ProfileContent({
   initialPosts,
   initialCodeFiles,
   counts,
-  username
 }: ProfileContentProps) {
   const [activeTab, setActiveTab] = useState<'posts' | 'code' | 'activity'>('posts');
 
