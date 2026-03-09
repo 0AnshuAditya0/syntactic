@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
-import { MDXContent } from '@/components/mdx/mdx-content';
+import { MDXContentSafe } from '@/components/mdx/mdx-content-safe';
 import { ReadingProgress } from '@/components/post/reading-progress';
 import { TableOfContents } from '@/components/post/table-of-contents';
 import { CommentList } from '@/components/comments/comment-list';
@@ -152,7 +152,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
               {/* MDX content */}
               <div className="prose prose-lg max-w-none mb-16 prose-headings:font-extrabold prose-headings:text-[#1E1E2C] prose-a:text-[#F29F67] prose-blockquote:border-l-[#F29F67] prose-blockquote:text-gray-600 prose-blockquote:italic">
-                <MDXContent source={post.content} />
+                <MDXContentSafe source={post.content} />
               </div>
 
               {/* ── Footer: Tags ── */}

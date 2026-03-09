@@ -112,7 +112,7 @@ export function EditorLayout({
               : "bg-[#F29F67] hover:bg-[#E28F57] text-white border-none"
               }`}
             onClick={onPublish}
-            disabled={isPublishing || saving}
+            disabled={isPublishing}
           >
             {isPublishing ? (
               <Loader2 className="w-3 h-3 animate-spin mr-2" />

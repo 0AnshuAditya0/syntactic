@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 // Add useRouter import
 import { useParams, useRouter } from 'next/navigation';
 import { EditorLayout } from '@/components/editor/editor-layout';
@@ -19,6 +19,31 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter(); // Use router
 
+  const withAbortTimeout = useCallback(<T,>(
+    builder: any,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ms);
+
+    // supabase-js Postgrest builders support abort signals in v2 via `.abortSignal(signal)`.
+    const maybeBuilder =
+      builder && typeof builder.abortSignal === 'function'
+        ? builder.abortSignal(controller.signal)
+        : builder;
+
+    // Postgrest builders are thenable but don't implement `.catch()`.
+    // Wrap to a real Promise so we can safely `catch/finally`.
+    return Promise.resolve(maybeBuilder as unknown as Promise<T>).catch((err: any) => {
+        if (controller.signal.aborted) {
+          throw new Error(`${label} timed out after ${Math.round(ms / 1000)}s`);
+        }
+        throw err;
+      })
+      .finally(() => clearTimeout(timeoutId));
+  }, []);
+
   // Track the actual ID we are working with (starts as 'new' or UUID)
   const [postId, setPostId] = useState<string>(params.id as string);
   const { user, tempUser } = useAuth();
@@ -34,10 +59,23 @@ export default function EditorPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [lastSavedContent, setLastSavedContent] = useState('');
+
+  // Persistence lock to avoid race conditions
+  const isSavingRef = useRef(false);
+  const inFlightSaveRef = useRef<Promise<any> | null>(null);
+  const lastSavedRef = useRef({ title: '', content: '' });
 
   const debouncedContent = useDebounce(content, 2000);
   const debouncedTitle = useDebounce(title, 1000);
+
+  // Tracking latest values for handleSave without causing function recreation
+  const contentRef = useRef(content);
+  const titleRef = useRef(title);
+
+  useEffect(() => { contentRef.current = content; }, [content]);
+  useEffect(() => { titleRef.current = title; }, [title]);
+
+
   // ... (other state)
 
   // ... (debounced hooks)
@@ -57,6 +95,8 @@ export default function EditorPage() {
         setTitle(data.title || '');
         setContent(data.content || '');
         setCoverImage(data.cover_image || null);
+        lastSavedRef.current = { title: data.title || '', content: data.content || '' };
+
       }
     } catch (error) {
       console.error('Error fetching post:', error);
@@ -66,74 +106,114 @@ export default function EditorPage() {
   }, [postId]);
 
   const handleSave = useCallback(async (updates: any = {}, options: { force?: boolean } = {}) => {
-    if (!currentUser) {
-      console.warn('Cannot save: No authenticated user found');
-      return null;
+    if (!currentUser) return null;
+
+    // Use a lock to prevent concurrent saves
+    if (isSavingRef.current && !options.force) {
+      console.log('[Editor] Save already in progress, returning in-flight save');
+      return inFlightSaveRef.current;
     }
 
-    // Auto-save lock: Skip only if NOT forced and already saving a new post
-    if (postId === 'new' && saving && !options.force) {
-      console.log('[Editor] Skipping auto-save: Creation already in progress');
+    // Normalize values for comparison and saving
+    const normalize = (val: string) => (val || '').replace(/\r\n/g, '\n').trim();
+
+    const targetTitle = updates.title !== undefined ? updates.title : titleRef.current;
+    const targetContent = updates.content !== undefined ? updates.content : contentRef.current;
+
+    // Check if anything actually changed to avoid redundant saves
+    const isRedundant = !options.force &&
+      normalize(targetTitle) === normalize(lastSavedRef.current.title) &&
+      normalize(targetContent) === normalize(lastSavedRef.current.content) &&
+      updates.cover_image === undefined &&
+      updates.published === undefined &&
+      updates.tags === undefined &&
+      updates.series_id === undefined &&
+      updates.excerpt === undefined;
+
+    if (isRedundant) {
+      console.log('[Editor] Skipping save: No changes detected');
       return null;
     }
 
     setSaving(true);
-    try {
+    isSavingRef.current = true;
+
+    const savePromise = (async () => {
+      const payload = {
+        title: targetTitle || 'Untitled Post',
+        content: targetContent || '',
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
       if (postId === 'new') {
-        const newSlug = (updates.title || title || 'untitled')
+        const newSlug = (normalize(targetTitle) || 'untitled')
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
 
-        const { data, error } = await supabase
-          .from('posts')
-          .insert({
-            title: title || 'Untitled Post',
-            content: content || '',
-            author_id: currentUser.id,
-            slug: newSlug,
-            published: false,
-            ...updates
-          })
-          .select()
-          .single();
+        const { data, error } = await withAbortTimeout(
+          supabase
+            .from('posts')
+            .insert({
+              ...payload,
+              slug: newSlug,
+              author_id: currentUser.id,
+              published: false
+            })
+            .select()
+            .single(),
+          45000,
+          'Saving new post'
+        );
 
         if (error) throw error;
+        result = data;
 
-        // Transition state to the new UUID
-        setPost(data);
-        setPostId(data.id);
-        setLastSavedContent(content);
-        // Use router for a cleaner transition if needed, or just stay on page
-        window.history.replaceState(null, '', `/editor/${data.id}`);
-        console.log('[Editor] New post created ID:', data.id);
-        return data;
+        lastSavedRef.current = { title: result.title, content: result.content };
+        setPost(result);
+        setPostId(result.id);
+        window.history.replaceState(null, '', `/editor/${result.id}`);
       } else {
-        const postData = {
-          ...updates,
-          updated_at: new Date().toISOString(),
-        };
-        const { data, error } = await supabase
-          .from('posts')
-          .update(postData)
-          .eq('id', postId)
-          .select()
-          .single();
+        const { data, error } = await withAbortTimeout(
+          supabase
+            .from('posts')
+            .update(payload)
+            .eq('id', postId)
+            .select()
+            .single(),
+          45000,
+          'Saving post'
+        );
 
         if (error) throw error;
+        result = data;
 
-        setPost((prev: any) => ({ ...prev, ...postData }));
-        setLastSavedContent(content);
-        return data;
+        lastSavedRef.current = { title: result.title, content: result.content };
+        setPost(result);
       }
+      return result;
+    })();
+
+    inFlightSaveRef.current = savePromise;
+
+    try {
+      return await savePromise;
     } catch (error: any) {
       console.error('[Editor] Database error in handleSave:', error);
-      toast.error('Failed to save: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to save changes');
       throw error;
     } finally {
-      if (!options.force) setSaving(false);
+      if (inFlightSaveRef.current === savePromise) {
+        inFlightSaveRef.current = null;
+      }
+      setSaving(false);
+      isSavingRef.current = false;
     }
-  }, [postId, currentUser, title, content, saving]);
+  }, [postId, currentUser]);
+
+
 
   useEffect(() => {
     if (postId === 'new') {
@@ -150,18 +230,30 @@ export default function EditorPage() {
     fetchPost();
   }, [postId, fetchPost]);
 
+  // Unified Auto-save Hook
   useEffect(() => {
-    if (post && debouncedContent !== post.content) {
-      const readingTime = calculateReadingTime(debouncedContent);
-      handleSave({ content: debouncedContent, reading_time: readingTime });
-    }
-  }, [debouncedContent, post, handleSave]);
+    if (!post || isPublishing) return;
 
-  useEffect(() => {
-    if (post && debouncedTitle !== post.title && debouncedTitle.trim()) {
-      handleSave({ title: debouncedTitle });
+    const normalize = (val: string) => (val || '').replace(/\r\n/g, '\n').trim();
+
+    const needsTitleUpdate = debouncedTitle.trim() && normalize(debouncedTitle) !== normalize(post.title);
+    const needsContentUpdate = normalize(debouncedContent) !== normalize(post.content);
+
+    if (needsTitleUpdate || needsContentUpdate) {
+      const updates: any = {};
+      if (needsTitleUpdate) updates.title = debouncedTitle;
+      if (needsContentUpdate) {
+        updates.content = debouncedContent;
+        updates.reading_time = calculateReadingTime(debouncedContent);
+      }
+
+      console.log('[Editor] Triggering auto-save...', updates);
+      handleSave(updates).catch(() => {
+        // Errors already surfaced via toast in handleSave; avoid unhandled rejection
+      });
     }
-  }, [debouncedTitle, post, handleSave]);
+  }, [debouncedContent, debouncedTitle, post, handleSave, isPublishing]);
+
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -235,12 +327,26 @@ export default function EditorPage() {
     console.log(`[Editor] Starting ${action} flow...`);
     setIsPublishing(true);
     setSaving(true);
+    isSavingRef.current = true;
 
     try {
-      const readingTime = calculateReadingTime(content);
+      // If an auto-save is in-flight, wait for it to finish to avoid racing updates.
+      if (inFlightSaveRef.current) {
+        // Don't force-timeout the underlying request; just stop waiting.
+        await Promise.race([
+          inFlightSaveRef.current.catch(() => null),
+          new Promise((resolve) => setTimeout(resolve, 12000)),
+        ]);
+      }
+
+      const normalize = (val: string) => (val || '').replace(/\r\n/g, '\n').trim();
+      const targetTitle = title.trim();
+      const targetContent = content; // Keep raw for publish to avoid accidental trimmings if any
+
+      const readingTime = calculateReadingTime(targetContent);
       const updates: any = {
-        title: title.trim(),
-        content: content,
+        title: targetTitle,
+        content: targetContent,
         reading_time: readingTime,
         published: targetState,
         updated_at: new Date().toISOString()
@@ -252,7 +358,7 @@ export default function EditorPage() {
 
       // Handle Slug Generation
       const finalSlug = (postId === 'new' || !post?.slug)
-        ? (title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`)
+        ? (normalize(targetTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`)
         : post.slug;
 
       updates.slug = finalSlug;
@@ -260,17 +366,20 @@ export default function EditorPage() {
 
       console.log(`[Editor] Submitting ${action} with updates:`, updates);
 
-      // We perform the operation directly to ensure absolute consistency
       let result;
       if (postId === 'new') {
-        const { data, error } = await supabase
-          .from('posts')
-          .insert({
-            ...updates,
-            author_id: currentUser.id
-          })
-          .select()
-          .single();
+        const { data, error } = await withAbortTimeout(
+          supabase
+            .from('posts')
+            .insert({
+              ...updates,
+              author_id: currentUser.id
+            })
+            .select()
+            .single(),
+          60000,
+          `Attempting to ${action}`
+        );
 
         if (error) throw error;
         result = data;
@@ -278,20 +387,25 @@ export default function EditorPage() {
         setPostId(data.id);
         window.history.replaceState(null, '', `/editor/${data.id}`);
       } else {
-        const { data, error } = await supabase
-          .from('posts')
-          .update(updates)
-          .eq('id', postId)
-          .select()
-          .single();
+        const { data, error } = await withAbortTimeout(
+          supabase
+            .from('posts')
+            .update(updates)
+            .eq('id', postId)
+            .select()
+            .single(),
+          60000,
+          `Attempting to ${action}`
+        );
 
         if (error) throw error;
         result = data;
       }
 
       if (result) {
+        lastSavedRef.current = { title: result.title, content: result.content };
         setPost(result);
-        alert(`Successfully ${action}ed!`); // Guaranteed feedback
+        alert(`Successfully ${action}ed!`);
         toast.success(`Post ${action}ed!`);
       }
     } catch (e: any) {
@@ -301,7 +415,10 @@ export default function EditorPage() {
     } finally {
       setIsPublishing(false);
       setSaving(false);
+      isSavingRef.current = false;
     }
+
+
   };
 
   if (loading && postId !== 'new') {

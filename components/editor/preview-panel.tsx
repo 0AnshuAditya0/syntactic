@@ -1,7 +1,8 @@
 'use client';
 
-import { MDXContent } from '@/components/mdx/mdx-content';
-import { Suspense, FC } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { MarkdownPreview } from '@/components/editor/markdown-preview';
+import { FC, useMemo } from 'react';
 
 export interface PreviewPanelProps {
   content: string;
@@ -18,6 +19,11 @@ export const PreviewPanel: FC<PreviewPanelProps> = ({
   readingTime, 
   coverImage 
 }) => {
+  // Compiling MDX on every keystroke can be very slow.
+  // Debounce to keep typing/publish responsive.
+  const debouncedContent = useDebounce(content, 500);
+  const previewSource = useMemo(() => debouncedContent, [debouncedContent]);
+
   return (
     <div className="h-full overflow-auto p-8 bg-white dark:bg-gray-900">
       <div className="max-w-3xl mx-auto space-y-8">
@@ -57,9 +63,7 @@ export const PreviewPanel: FC<PreviewPanelProps> = ({
 
         {/* Content Preview */}
         <div className="prose prose-slate dark:prose-invert max-w-none">
-          <Suspense fallback={<div className="text-muted-foreground animate-pulse">Loading content preview...</div>}>
-            <MDXContent source={content} />
-          </Suspense>
+          <MarkdownPreview source={previewSource} />
         </div>
       </div>
     </div>

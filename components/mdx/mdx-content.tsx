@@ -22,7 +22,7 @@ const components: MDXComponents = {
   MermaidDiagram,
 };
 
-export async function MDXContent({ source }: MDXContentProps) {
+export function MDXContent({ source }: MDXContentProps) {
   const options = {
     mdxOptions: {
       remarkPlugins: [remarkGfm],
