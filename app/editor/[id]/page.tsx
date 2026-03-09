@@ -19,8 +19,12 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter(); // Use router
 
+  type AbortableThenable<T> = PromiseLike<T> & {
+    abortSignal?: (signal: AbortSignal) => PromiseLike<T>;
+  };
+
   const withAbortTimeout = useCallback(<T,>(
-    builder: any,
+    builder: AbortableThenable<T>,
     ms: number,
     label: string,
   ): Promise<T> => {
@@ -35,7 +39,7 @@ export default function EditorPage() {
 
     // Postgrest builders are thenable but don't implement `.catch()`.
     // Wrap to a real Promise so we can safely `catch/finally`.
-    return Promise.resolve(maybeBuilder as unknown as Promise<T>).catch((err: any) => {
+    return Promise.resolve(maybeBuilder).catch((err: any) => {
         if (controller.signal.aborted) {
           throw new Error(`${label} timed out after ${Math.round(ms / 1000)}s`);
         }
@@ -211,7 +215,7 @@ export default function EditorPage() {
       setSaving(false);
       isSavingRef.current = false;
     }
-  }, [postId, currentUser]);
+  }, [postId, currentUser, withAbortTimeout]);
 
 
 
