@@ -5,26 +5,26 @@ export interface PistonExecutionResult {
     executionTime?: number;
 }
 
-interface PistonResponse {
-    run: {
-        stdout: string;
-        stderr: string;
-        code: number;
-        signal: string | null;
-        output: string;
-    };
+interface PistonV1Response {
+    ran: boolean;
+    language: string;
+    version: string;
+    output: string;
+    stdout: string;
+    stderr: string;
+    message?: string; // Sometimes returned on error
 }
 
-const PISTON_API = 'https://emkc.org/api/v2/piston';
+const PISTON_API = 'https://emkc.org/api/v1/piston';
 
-const languageVersions: Record<string, { language: string; version: string }> = {
-    python: { language: 'python', version: '3.10.0' },
-    java: { language: 'java', version: '15.0.2' },
-    cpp: { language: 'c++', version: '10.2.0' },
-    c: { language: 'c', version: '10.2.0' },
-    typescript: { language: 'typescript', version: '5.0.3' },
-    go: { language: 'go', version: '1.16.2' },
-    rust: { language: 'rust', version: '1.68.2' },
+const languageVersions: Record<string, { language: string }> = {
+    python: { language: 'python' },
+    java: { language: 'java' },
+    cpp: { language: 'cpp' },
+    c: { language: 'c' },
+    typescript: { language: 'typescript' },
+    go: { language: 'go' },
+    rust: { language: 'rust' },
 };
 
 export async function executePiston(
@@ -43,18 +43,7 @@ export async function executePiston(
             },
             body: JSON.stringify({
                 language: config.language,
-                version: config.version,
-                files: [
-                    {
-                        name: language === 'python' ? 'main.py' :
-                            language === 'java' ? 'Main.java' :
-                                language === 'cpp' ? 'main.cpp' :
-                                    language === 'c' ? 'main.c' :
-                                        language === 'typescript' ? 'main.ts' :
-                                            language === 'go' ? 'main.go' : 'main.rs',
-                        content: code,
-                    },
-                ],
+                source: code,
             }),
         });
 
@@ -62,13 +51,18 @@ export async function executePiston(
             throw new Error(`Piston API error: ${response.statusText}`);
         }
 
-        const data: PistonResponse = await response.json();
+        const data: PistonV1Response = await response.json();
         const executionTime = Date.now() - startTime;
+        
+        // If the API rate limits or throws a message
+        if (data.message) {
+            throw new Error(data.message);
+        }
 
         return {
-            success: data.run.code === 0,
-            output: data.run.stdout || data.run.output,
-            error: data.run.stderr || undefined,
+            success: data.ran && !data.stderr,
+            output: data.stdout || data.output || '',
+            error: data.stderr || undefined,
             executionTime,
         };
     } catch (error: unknown) {
