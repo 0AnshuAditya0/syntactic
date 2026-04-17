@@ -2,7 +2,16 @@ import 'prismjs/themes/prism-tomorrow.css';
 import './globals.css';
 import React from 'react';
 import type { Metadata } from 'next';
-import { Space_Mono, Raleway, Poppins, Dancing_Script } from 'next/font/google';
+import { Space_Mono, Raleway, Poppins, Dancing_Script, Instrument_Serif } from 'next/font/google';
+
+// ... (existing configs)
+
+const instrumentSerif = Instrument_Serif({ 
+  weight: ['400'],
+  subsets: ['latin'], 
+  style: ['italic', 'normal'],
+  variable: '--font-serif' 
+});
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { AuthProvider } from '@/components/providers/auth-provider';
@@ -76,7 +85,7 @@ export default function RootLayout({
       <head>
         <link rel="preload" href="/cat_ani.gif" as="image" />
       </head>
-      <body className={`${raleway.variable} ${spaceMono.variable} ${poppins.variable} ${dancingScript.variable} font-sans antialiased`}>
+      <body className={`${raleway.variable} ${spaceMono.variable} ${poppins.variable} ${dancingScript.variable} ${instrumentSerif.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
             <LoadingProvider>

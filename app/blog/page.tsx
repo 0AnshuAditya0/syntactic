@@ -51,251 +51,238 @@ export default async function BlogPage() {
   const featuredPost = posts?.[0] ?? null;
   const gridPosts = posts?.slice(1) ?? [];
 
-  const allTags = Array.from(
-    new Set((posts ?? []).flatMap((p) => p.tags ?? []))
-  ).slice(0, 5);
-
   return (
-    <div className="min-h-screen bg-[#F5F5F7] pt-20">
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-20 py-12">
-
-      
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-3 text-[#1E1E2C]">Blog</h1>
-          <p className="text-lg text-gray-600">
-            Explore tutorials, guides, and insights from the Syntactic community
-          </p>
-        </div>
-
-        {!posts || posts.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="text-gray-600 text-lg mb-4">
-              No published posts yet.
+    <div className="min-h-screen bg-white pt-24 pb-20 font-sans">
+      <main className="max-w-7xl mx-auto px-6 lg:px-12">
+        {(!posts || posts.length === 0) ? (
+          <div className="text-center py-32">
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">Journal</h1>
+            <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
+              We haven't shared any stories yet. Check back soon for deep dives into engineering and design.
             </p>
             <Link
               href="/editor"
-              className="text-[#F29F67] hover:text-[#E08D55] hover:underline font-semibold"
+              className="inline-flex items-center justify-center px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-all"
             >
-              Create your first post →
+              Start Writing
             </Link>
           </div>
         ) : (
           <>
             {/* ── Featured Hero Section ── */}
             {featuredPost && (
-              <section className="mb-20">
-                <Link href={`/post/${featuredPost.slug}`}>
-                  <div className="group relative flex flex-col lg:flex-row items-center gap-0 rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100 transition-shadow hover:shadow-md">
+              <section className="mb-32">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                  <div className="lg:col-span-7 group">
+                    <Link href={`/post/${featuredPost.slug}`}>
+                      <div className="relative aspect-[1.4] rounded-[3rem] overflow-hidden bg-gray-100 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)]">
+                        {featuredPost.cover_image ? (
+                          <Image
+                            src={featuredPost.cover_image}
+                            alt={featuredPost.title}
+                            fill
+                            sizes="(min-width: 1024px) 60vw, 100vw"
+                            className="object-cover transition-transform duration-1000 group-hover:scale-105"
+                            priority
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-8xl italic opacity-5">
+                            Syntactic
+                          </div>
+                        )}
+                        <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-[3rem]" />
+                      </div>
+                    </Link>
+                  </div>
 
-                    {/* Cover Image */}
-                    <div className="w-full lg:w-3/5 aspect-[16/9] relative overflow-hidden shrink-0 bg-gray-100">
-                      {featuredPost.cover_image ? (
-                        <Image
-                          src={featuredPost.cover_image}
-                          alt={featuredPost.title}
-                          fill
-                          sizes="(min-width: 1024px) 60vw, 100vw"
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          priority
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-[#F29F67]/5">
-                          <span className="text-[#F29F67]/20 font-black text-6xl select-none">
-                            SY
-                          </span>
-                        </div>
-                      )}
+                  <div className="lg:col-span-5 space-y-10">
+                    <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] text-gray-400">
+                      <span className="text-zinc-800">Featured Analysis</span>
+                      <span className="w-12 h-px bg-gray-200"></span>
+                      <span>
+                        {featuredPost.published_at && new Date(featuredPost.published_at).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
                     </div>
 
-                    {/* Content */}
-                    <div className="w-full lg:w-2/5 p-8 lg:pr-12 flex flex-col gap-5">
-                      <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 bg-[#F29F67]/10 text-[#F29F67] text-xs font-bold uppercase tracking-widest rounded-full">
-                          Latest
-                        </span>
-                        {featuredPost.published_at && (
-                          <span className="text-gray-400 text-xs font-medium">
-                            {formatDistanceToNow(new Date(featuredPost.published_at), { addSuffix: true })}
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="text-2xl lg:text-4xl font-extrabold leading-tight text-gray-900 group-hover:text-[#F29F67] transition-colors">
+                    <Link href={`/post/${featuredPost.slug}`} className="block group">
+                      <h1 className="text-6xl lg:text-7xl font-black text-zinc-900 leading-[0.95] tracking-tighter group-hover:text-zinc-600 transition-colors">
                         {featuredPost.title}
-                      </h2>
+                        <span className="text-[#F29F67]">.</span>
+                      </h1>
+                    </Link>
 
-                      {featuredPost.excerpt && (
-                        <p className="text-base leading-relaxed line-clamp-3" style={{ color: '#333333' }}>
-                          {featuredPost.excerpt}
-                        </p>
-                      )}
+                    {featuredPost.excerpt && (
+                      <p className="text-2xl text-gray-500 font-medium leading-relaxed font-serif italic max-w-lg">
+                        {featuredPost.excerpt}
+                      </p>
+                    )}
 
-                      {/* Tags */}
-                      {featuredPost.tags && featuredPost.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {featuredPost.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="text-[11px] font-bold text-[#F29F67] bg-[#F29F67]/5 px-2 py-0.5 rounded"
-                            >
-                              #{tag.toLowerCase()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between mt-2">
-                        {/* Author */}
-                        <div className="flex items-center gap-2">
-                          {featuredPost.profiles?.avatar_url ? (
-                            <Image
-                              src={featuredPost.profiles.avatar_url}
-                              alt={featuredPost.profiles.username || 'Author'}
-                              width={28}
-                              height={28}
-                              className="rounded-full"
-                            />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#F29F67]/10 flex items-center justify-center text-[#F29F67] text-xs font-bold border border-[#F29F67]/20">
-                              {featuredPost.profiles?.username?.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <span className="text-sm font-semibold text-gray-700">
-                            {featuredPost.profiles?.display_name || featuredPost.profiles?.username}
-                          </span>
-                        </div>
-
-                        {/* Reading time */}
-                        {featuredPost.reading_time && (
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                            {featuredPost.reading_time} min read
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[#F29F67] font-bold text-sm uppercase tracking-wider mt-1">
-                        Read Article
-                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="pt-4">
+                      <Link
+                        href={`/post/${featuredPost.slug}`}
+                        className="inline-flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-zinc-900 group hover:gap-5 transition-all"
+                      >
+                        Read the Journal
+                        <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
-                      </div>
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </div>
               </section>
             )}
 
-            {/* ── Category Filter Chips ── */}
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-12">
-                <span className="px-5 py-2 bg-[#F29F67] text-white text-sm font-bold rounded-xl">
-                  All Stories
-                </span>
-                {allTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-5 py-2 bg-white text-gray-600 text-sm font-bold rounded-xl border border-gray-200 hover:border-[#F29F67]/50 transition-all cursor-pointer capitalize"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* ── Section Header ── */}
+            <div className="flex items-center justify-between mb-16 px-2">
+              <h2 className="text-4xl font-black text-zinc-900 tracking-tighter">Recent Reflections</h2>
+              <button className="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-100 text-gray-400 hover:text-zinc-900 hover:shadow-lg transition-all">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </button>
+            </div>
 
             {/* ── Blog Grid ── */}
-            {gridPosts.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {gridPosts.map((post) => (
-                  <article key={post.id} className="group flex flex-col gap-4">
-
-                    {/* Thumbnail */}
-                    <Link href={`/post/${post.slug}`}>
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-sm border border-gray-100 bg-gray-100">
-                        {post.cover_image ? (
-                          <Image
-                            src={post.cover_image}
-                            alt={post.title}
-                            fill
-                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-[#F29F67]/5">
-                            <span className="text-[#F29F67]/20 font-black text-4xl select-none">SY</span>
-                          </div>
-                        )}
-
-                        {/* Tag badge */}
-                        {post.tags && post.tags[0] && (
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2.5 py-1 bg-white/90 dark:bg-gray-900/90 text-[#F29F67] text-[10px] font-bold uppercase tracking-widest rounded-lg backdrop-blur-sm shadow-sm capitalize">
-                              {post.tags[0]}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-
-                    {/* Meta + Content */}
-                    <div className="flex flex-col gap-2.5">
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                        {post.published_at && (
-                          <span>
-                            {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
-                          </span>
-                        )}
-                        {post.reading_time && (
-                          <>
-                            <span className="w-1 h-1 bg-[#F29F67] rounded-full" />
-                            <span>{post.reading_time} min read</span>
-                          </>
-                        )}
-                      </div>
-
-                      <Link href={`/post/${post.slug}`}>
-                        <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-[#F29F67] transition-colors line-clamp-2">
-                          {post.title}
-                        </h3>
-                      </Link>
-
-                      {post.excerpt && (
-                        <p className="text-sm leading-relaxed line-clamp-2" style={{ color: '#666666' }}>
-                          {post.excerpt}
-                        </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-20 mb-32">
+              {gridPosts.slice(0, 3).map((post) => (
+                <article key={post.id} className="flex flex-col space-y-8 group">
+                  <Link href={`/post/${post.slug}`}>
+                    <div className="relative aspect-[1.3] rounded-[2.5rem] overflow-hidden bg-gray-100 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)]">
+                      {post.cover_image ? (
+                        <Image
+                          src={post.cover_image}
+                          alt={post.title}
+                          fill
+                          sizes="(min-width: 1024px) 33vw, 50vw"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-5xl italic opacity-5">SY</div>
                       )}
+                      <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-[2.5rem]" />
+                    </div>
+                  </Link>
 
-                      {/* Author row */}
-                      <div className="flex items-center gap-2 mt-1">
-                        {post.profiles?.avatar_url ? (
-                          <Image
-                            src={post.profiles.avatar_url}
-                            alt={post.profiles.username || 'Author'}
-                            width={20}
-                            height={20}
-                            className="rounded-full"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full bg-[#F29F67]/10 flex items-center justify-center text-[#F29F67] text-[9px] font-bold border border-[#F29F67]/20">
-                            {post.profiles?.username?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <Link
-                          href={`/profile/${post.profiles?.username}`}
-                          className="text-xs font-semibold text-gray-600 hover:text-[#F29F67] transition-colors"
-                        >
-                          {post.profiles?.display_name || post.profiles?.username}
-                        </Link>
-                      </div>
+                  <div className="space-y-4 px-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
+                      {post.tags?.[0] || 'ENGINEERING CULTURE'}
+                    </span>
+                    <Link href={`/post/${post.slug}`}>
+                      <h3 className="text-3xl font-black text-zinc-900 leading-[1.1] group-hover:text-zinc-500 transition-colors line-clamp-2">
+                        {post.title}
+                      </h3>
+                    </Link>
+                    <p className="text-xl text-gray-500 font-medium leading-relaxed font-serif italic line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    <div className="pt-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      <span>By {post.profiles?.display_name || post.profiles?.username}</span>
+                      <span className="w-1.5 h-1.5 bg-gray-200 rounded-full" />
+                      <span>{post.reading_time || 5} min read</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
 
+            {/* ── Bottom Section ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-20">
+              <div className="lg:col-span-8">
+                {gridPosts[3] && (
+                  <article className="h-full group bg-white rounded-[3rem] border border-gray-100 overflow-hidden flex flex-col md:flex-row shadow-[0_24px_48px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] transition-all duration-500">
+                    <div className="w-full md:w-5/12 relative min-h-[400px]">
+                      {gridPosts[3].cover_image ? (
+                        <Image
+                          src={gridPosts[3].cover_image}
+                          alt={gridPosts[3].title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-zinc-100 flex items-center justify-center font-black text-5xl text-zinc-200 italic">SY</div>
+                      )}
+                    </div>
+                    <div className="w-full md:w-7/12 p-12 md:p-16 flex flex-col justify-center space-y-6">
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
+                        {gridPosts[3].tags?.[0] || 'THE CRAFT'}
+                      </span>
+                      <h3 className="text-4xl lg:text-5xl font-black text-zinc-900 leading-[1] tracking-tight">
+                        {gridPosts[3].title}
+                      </h3>
+                      <p className="text-xl text-gray-500 font-medium leading-relaxed font-serif italic">
+                        {gridPosts[3].excerpt}
+                      </p>
                       <Link
-                        href={`/post/${post.slug}`}
-                        className="inline-flex items-center gap-1 text-[#F29F67] text-sm font-bold mt-1 group/link"
+                        href={`/post/${gridPosts[3].slug}`}
+                        className="inline-flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-zinc-900 group hover:gap-5 transition-all pt-4"
                       >
-                        Read More
-                        <svg className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                        Continue Reading
+                        <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                       </Link>
+                    </div>
+                  </article>
+                )}
+              </div>
+
+              <div className="lg:col-span-4 bg-zinc-950 rounded-[3rem] p-12 flex flex-col items-center justify-center text-center text-white space-y-8 relative overflow-hidden group">
+                <div className="w-16 h-16 bg-[#F29F67]/20 rounded-[1.5rem] flex items-center justify-center text-[#F29F67] border border-[#F29F67]/30">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-3xl font-black tracking-tighter leading-none">The Sunday Edition</h3>
+                  <p className="text-gray-400 text-lg font-medium leading-relaxed italic font-serif">
+                    Delivered weekly. Deeply researched.
+                  </p>
+                </div>
+                <div className="w-full space-y-4">
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm text-center tracking-wider"
+                  />
+                  <button className="w-full bg-white text-zinc-900 font-black uppercase tracking-[0.3em] text-[11px] py-5 rounded-2xl hover:bg-[#F29F67] transition-all">
+                    Join the List
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Remaining Grid Posts */}
+            {gridPosts.length > 4 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-20">
+                {gridPosts.slice(4).map((post) => (
+                  <article key={post.id} className="flex flex-col space-y-8 group">
+                    <Link href={`/post/${post.slug}`}>
+                      <div className="relative aspect-[1.3] rounded-[2.5rem] overflow-hidden bg-gray-100 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)]">
+                        {post.cover_image ? (
+                          <Image src={post.cover_image} alt={post.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-5xl italic opacity-5">SY</div>
+                        )}
+                        <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-[2.5rem]" />
+                      </div>
+                    </Link>
+                    <div className="space-y-4 px-2">
+                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
+                         {post.tags && post.tags.length > 0 ? post.tags[post.tags.length - 1] : 'INSIGHTS'}
+                       </span>
+                       <Link href={`/post/${post.slug}`}>
+                         <h3 className="text-3xl font-black text-zinc-900 leading-[1.1] group-hover:text-zinc-500 transition-colors line-clamp-2">
+                           {post.title}
+                         </h3>
+                       </Link>
+                       <p className="text-xl text-gray-500 font-medium leading-relaxed font-serif italic line-clamp-2">
+                         {post.excerpt}
+                       </p>
                     </div>
                   </article>
                 ))}
