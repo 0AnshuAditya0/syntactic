@@ -5,17 +5,7 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
 
-        // Check authentication
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
-        // Get the file from form data
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
@@ -26,7 +16,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file size (5MB max for covers)
         if (file.size > 5 * 1024 * 1024) {
             return NextResponse.json(
                 { error: 'File size must be less than 5MB' },

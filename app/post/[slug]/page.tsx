@@ -120,15 +120,14 @@ export default async function PostPage({ params }: PostPageProps) {
               </div>
             </div>
 
-            {/* Hero Cover Image */}
             {post.cover_image && (
-              <div className="w-full aspect-video rounded-xl overflow-hidden mb-4">
+              <div className="w-full aspect-video rounded-xl overflow-hidden mb-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800">
                 <Image
                   src={post.cover_image}
                   alt={post.title}
                   width={1200}
                   height={630}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   unoptimized
                 />
               </div>

@@ -82,8 +82,7 @@ export default async function BlogPage() {
                             alt={featuredPost.title}
                             fill
                             sizes="(min-width: 1024px) 60vw, 100vw"
-                            className="object-cover transition-transform duration-1000 group-hover:scale-105"
-                            priority
+                            className="object-contain"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-8xl italic opacity-5">
@@ -159,7 +158,7 @@ export default async function BlogPage() {
                           alt={post.title}
                           fill
                           sizes="(min-width: 1024px) 33vw, 50vw"
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="object-contain"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-5xl italic opacity-5">SY</div>
@@ -201,7 +200,7 @@ export default async function BlogPage() {
                           src={gridPosts[3].cover_image}
                           alt={gridPosts[3].title}
                           fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="object-contain"
                         />
                       ) : (
                         <div className="w-full h-full bg-zinc-100 flex items-center justify-center font-black text-5xl text-zinc-200 italic">SY</div>

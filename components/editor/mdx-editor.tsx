@@ -39,7 +39,7 @@ export function MdxEditor({ value, onChange, disabled }: MdxEditorProps) {
   if (!mounted) return null;
 
   return (
-    <div className="h-[70vh] w-full rounded-3xl overflow-hidden border-[4px] border-gray-300 shadow-[0_4px_25px_-5px_rgba(0,0,0,0.05)] bg-white">
+    <div className="h-full w-full overflow-hidden">
       <Editor
         height="100%"
         defaultLanguage="markdown"

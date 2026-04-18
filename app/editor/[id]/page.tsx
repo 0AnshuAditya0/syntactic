@@ -37,15 +37,21 @@ export default function EditorPage() {
         ? builder.abortSignal(controller.signal)
         : builder;
 
-    // Postgrest builders are thenable but don't implement `.catch()`.
-    // Wrap to a real Promise so we can safely `catch/finally`.
-    return Promise.resolve(maybeBuilder).catch((err: any) => {
-        if (controller.signal.aborted) {
-          throw new Error(`${label} timed out after ${Math.round(ms / 1000)}s`);
-        }
-        throw err;
-      })
-      .finally(() => clearTimeout(timeoutId));
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        controller.abort();
+        reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`));
+      }, ms);
+    });
+
+    return Promise.race([
+      Promise.resolve(maybeBuilder),
+      timeoutPromise
+    ]).catch((err: any) => {
+      throw err;
+    }).finally(() => {
+      clearTimeout(timeoutId);
+    });
   }, []);
 
   // Track the actual ID we are working with (starts as 'new' or UUID)
@@ -152,10 +158,11 @@ export default function EditorPage() {
 
       let result;
       if (postId === 'new') {
-        const newSlug = (normalize(targetTitle) || 'untitled')
+        const baseSlug = (normalize(targetTitle) || 'untitled')
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+          .replace(/(^-|-$)/g, '');
+        const newSlug = `${baseSlug}-${Date.now().toString(36)}`;
 
         const { data, error } = await withAbortTimeout(
           supabase
@@ -274,14 +281,19 @@ export default function EditorPage() {
       formData.append('file', file);
 
       const res = await fetch('/api/upload/cover', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || `Upload failed with status ${res.status}`);
+      }
 
       const { url } = await res.json();
       setCoverImage(url);
       await handleSave({ cover_image: url });
-    } catch (err) {
-      console.error(err);
-      alert('Failed to upload cover image');
+    } catch (err: any) {
+      console.error('Upload Error:', err);
+      toast.error(err.message || 'Failed to upload cover image');
+      alert(`Failed to upload cover image: ${err.message}`);
     } finally {
       setUploading(false);
     }
@@ -314,6 +326,7 @@ export default function EditorPage() {
   }
 
   const handlePublish = async () => {
+    console.log('[handlePublish] Action triggered');
     if (!currentUser) {
       toast.error('Authentication required');
       return;
@@ -328,26 +341,24 @@ export default function EditorPage() {
     const action = isCurrentlyPublished ? 'unpublish' : 'publish';
     const targetState = !isCurrentlyPublished;
 
-    console.log(`[Editor] Starting ${action} flow...`);
+    console.log(`[handlePublish] Action determined as "${action}", starting state locks`);
     setIsPublishing(true);
-    setSaving(true);
-    isSavingRef.current = true;
 
     try {
-      // If an auto-save is in-flight, wait for it to finish to avoid racing updates.
       if (inFlightSaveRef.current) {
-        // Don't force-timeout the underlying request; just stop waiting.
+        console.log('[handlePublish] Waiting on in-flight auto-save...');
         await Promise.race([
           inFlightSaveRef.current.catch(() => null),
-          new Promise((resolve) => setTimeout(resolve, 12000)),
+          new Promise((resolve) => setTimeout(resolve, 5000)),
         ]);
+        console.log('[handlePublish] In-flight auto-save resolved/timed out.');
       }
 
       const normalize = (val: string) => (val || '').replace(/\r\n/g, '\n').trim();
       const targetTitle = title.trim();
-      const targetContent = content; // Keep raw for publish to avoid accidental trimmings if any
-
+      const targetContent = content;
       const readingTime = calculateReadingTime(targetContent);
+
       const updates: any = {
         title: targetTitle,
         content: targetContent,
@@ -360,37 +371,36 @@ export default function EditorPage() {
         updates.published_at = new Date().toISOString();
       }
 
-      // Handle Slug Generation
+      const baseSlug = (normalize(targetTitle) || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const finalSlug = (postId === 'new' || !post?.slug)
-        ? (normalize(targetTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`)
+        ? `${baseSlug}-${Date.now().toString(36)}`
         : post.slug;
 
       updates.slug = finalSlug;
-      if (updates.slug.length < 3) updates.slug += '-article';
 
-      console.log(`[Editor] Submitting ${action} with updates:`, updates);
+      console.log(`[handlePublish] Preparing Supabase call for postId = ${postId}`, updates);
 
       let result;
       if (postId === 'new') {
+        const payload = { ...updates, author_id: currentUser.id };
+        console.log('[handlePublish] Inserting new post...', payload);
         const { data, error } = await withAbortTimeout(
           supabase
             .from('posts')
-            .insert({
-              ...updates,
-              author_id: currentUser.id
-            })
+            .insert(payload)
             .select()
             .single(),
-          60000,
+          15000,
           `Attempting to ${action}`
         );
-
+        
+        console.log('[handlePublish] Insert returned:', { data, error });
         if (error) throw error;
         result = data;
-
         setPostId(data.id);
         window.history.replaceState(null, '', `/editor/${data.id}`);
       } else {
+        console.log(`[handlePublish] Updating existing post ${postId}...`);
         const { data, error } = await withAbortTimeout(
           supabase
             .from('posts')
@@ -398,31 +408,28 @@ export default function EditorPage() {
             .eq('id', postId)
             .select()
             .single(),
-          60000,
+          15000,
           `Attempting to ${action}`
         );
-
+        
+        console.log('[handlePublish] Update returned:', { data, error });
         if (error) throw error;
         result = data;
       }
 
       if (result) {
+        console.log('[handlePublish] Successfully saved DB state. Updating UI components.');
         lastSavedRef.current = { title: result.title, content: result.content };
         setPost(result);
-        alert(`Successfully ${action}ed!`);
-        toast.success(`Post ${action}ed!`);
+        toast.success(`Post ${action}ed successfully!`);
       }
     } catch (e: any) {
-      console.error(`[Editor] ${action} failed:`, e);
-      alert(`Error during ${action}: ` + (e.message || 'Check terminal'));
-      toast.error(e.message || `Failed to ${action}`);
+      console.error(`[Editor] ${action} failed execution tree:`, e);
+      toast.error(e.message || `Failed to ${action}. Check your connection.`);
     } finally {
+      console.log('[handlePublish] Entering strictly enforced finally block, resetting IsPublishing flag.');
       setIsPublishing(false);
-      setSaving(false);
-      isSavingRef.current = false;
     }
-
-
   };
 
   if (loading && postId !== 'new') {
@@ -449,58 +456,82 @@ export default function EditorPage() {
       onDelete={handleDelete}
       published={post?.published || false}
     >
-      <div className="flex h-full">
+      <div className="flex h-full overflow-hidden bg-gray-50/50">
         {/* Editor Main Section */}
-        <div className={`flex-1 flex flex-col min-w-0 transition-opacity duration-300 ${isPublishing ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${showPreview ? 'hidden sm:flex border-r border-gray-300' : 'flex'}`}>
-          <div className="flex-1 overflow-y-auto px-4 sm:px-12 py-12">
-            <div className="max-w-[850px] mx-auto space-y-12 bg-white p-16 rounded-[3rem] border-[4px] border-gray-300 shadow-[0_2px_45px_-10px_rgba(0,0,0,0.06)]">
-              {/* Cover Image Section - Prominent 'Cover Page' feel */}
-              <div className="space-y-4">
-                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block">Story Cover</label>
+        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isPublishing ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${showPreview ? 'hidden sm:flex border-r border-gray-200' : 'flex'}`}>
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8 lg:py-12 bg-gray-50/30">
+            <div className="max-w-[850px] mx-auto space-y-8 pb-32">
+              
+              {/* Section 1: Story Cover */}
+              <div className="bg-white rounded-[2rem] border-[3px] border-gray-200 shadow-sm overflow-hidden p-8 group transition-all hover:border-gray-300 focus-within:border-[#F29F67]">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">01. Story Cover</label>
+                  {coverImage && (
+                    <button onClick={removeCover} className="text-[10px] font-bold text-red-400 uppercase tracking-widest hover:text-red-500 transition-colors">Discard Image</button>
+                  )}
+                </div>
                 {coverImage ? (
-                  <div className="relative group w-full aspect-[21/9] rounded-[2rem] overflow-hidden shadow-md border-[3px] border-white ring-1 ring-gray-100">
+                  <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden shadow-sm">
                     <img src={coverImage} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
-                      <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()} className="bg-white/95 border-none shadow-lg">Change Cover</Button>
-                      <Button variant="destructive" size="sm" onClick={removeCover} className="bg-red-500/95 border-none shadow-lg">Remove</Button>
+                    <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                      <Button variant="secondary" size="sm" onClick={() => document.getElementById('cover-upload')?.click()} className="bg-white/95 border-none shadow-lg text-xs font-bold">Swap Cover</Button>
                     </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => document.getElementById('cover-upload')?.click()}
-                    className="w-full h-48 rounded-[2rem] border-[3px] border-dashed border-gray-200 flex flex-col items-center justify-center gap-4 text-gray-400 hover:text-[#F29F67] hover:border-[#F29F67]/50 transition-all bg-gray-50/50 group"
+                    className="w-full h-48 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-4 text-gray-400 hover:text-[#F29F67] hover:border-[#F29F67]/50 transition-all bg-gray-50/30 group/btn"
                     disabled={uploading}
                   >
-                    <div className="p-4 bg-white rounded-[1.5rem] shadow-sm border-2 border-transparent group-hover:border-[#F29F67]/20 transition-all">
-                      {uploading ? <Loader2 className="w-8 h-8 animate-spin text-[#F29F67]" /> : <ImageIcon className="w-8 h-8 opacity-40 group-hover:opacity-100" />}
+                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover/btn:border-[#F29F67]/20 transition-all">
+                      {uploading ? <Loader2 className="w-6 h-6 animate-spin text-[#F29F67]" /> : <ImageIcon className="w-6 h-6 opacity-30 group-hover/btn:opacity-100" />}
                     </div>
-                    <span className="text-sm font-bold tracking-tight">Tap to Upload Cover Page</span>
+                    <div className="text-center">
+                      <p className="text-xs font-black uppercase tracking-widest mb-1">Add Story Cover</p>
+                      <p className="text-[10px] text-gray-400">High-resolution landscape recommended</p>
+                    </div>
                   </button>
                 )}
+                <input id="cover-upload" type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
               </div>
 
-              <input
-                id="cover-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleCoverUpload}
-                className="hidden"
-              />
-
-              {/* Title Section */}
-              <div className="space-y-4">
-                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block px-2">Main Title</label>
+              {/* Section 2: Headline & Intro */}
+              <div className="bg-white rounded-[2rem] border-[3px] border-gray-200 shadow-sm p-8 space-y-4 focus-within:border-[#F29F67] transition-all hover:border-gray-300">
+                <div className="flex items-center justify-between">
+                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">02. Headline</label>
+                   <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-300 bg-gray-50 px-2 py-0.5 rounded uppercase tracking-wider">Draft</span>
+                      <span className="text-[10px] font-bold text-gray-300 bg-gray-50 px-2 py-0.5 rounded uppercase tracking-wider">Editorial</span>
+                   </div>
+                </div>
                 <TitleEditor
                   value={title}
                   onChange={setTitle}
-                  placeholder="Tell your story..."
+                  placeholder="Enter a compelling headline..."
                 />
+                <div className="px-8 pb-4">
+                  <textarea
+                    value={post?.excerpt || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPost((prev: any) => ({ ...prev, excerpt: val }));
+                      // Use the auto-save mechanism by triggering a title change or debouncing excerpt
+                    }}
+                    placeholder="Write a brief subtitle or introduction..."
+                    className="w-full text-base font-serif italic text-gray-500 placeholder:text-gray-200 bg-transparent resize-none outline-none min-h-[50px] leading-relaxed"
+                  />
+                </div>
               </div>
 
-              {/* MDX Writing Box Section */}
-              <div className="space-y-4">
-                <label className="text-xs font-black text-[#F29F67] uppercase tracking-[0.2em] mb-4 block px-2">Writing Area</label>
-                <div className="min-h-[500px]">
+              {/* Section 3: Manuscript Content */}
+              <div className="bg-white rounded-[2rem] border-[3px] border-gray-200 shadow-sm focus-within:border-[#F29F67] transition-all hover:border-gray-300 min-h-[500px]">
+                <div className="flex items-center justify-between p-8 pb-4 border-b border-gray-100 mb-6">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">03. Manuscript</label>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">MDX Enabled</span>
+                  </div>
+                </div>
+                <div className="px-2 pb-8 h-[70vh]">
                   <MdxEditor value={content} onChange={setContent} />
                 </div>
               </div>
@@ -508,9 +539,60 @@ export default function EditorPage() {
           </div>
         </div>
 
+        {/* Improved Right Sidebar */}
+        {!showPreview && (
+          <aside className="w-[300px] border-l border-gray-200 bg-white hidden xl:flex flex-col shrink-0 p-8 space-y-12">
+            {/* Story State */}
+            <div className="space-y-6">
+              <h3 className="text-[11px] font-black text-gray-900 border-b border-gray-100 pb-3 uppercase tracking-[0.4em]">Story State</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <p className="text-2xl font-black text-gray-950 leading-none mb-1">
+                      {content.trim() ? content.trim().split(/\s+/).length : 0}
+                   </p>
+                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Words</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <p className="text-2xl font-black text-gray-950 leading-none mb-1">
+                      {calculateReadingTime(content)}
+                   </p>
+                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Min To</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Score */}
+            <div className="space-y-6 text-center lg:text-left">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.4em]">SEO Score</h3>
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${title.length > 20 && content.length > 100 ? 'text-emerald-500 bg-emerald-50' : 'text-[#F29F67] bg-[#F29F67]/5'}`}>
+                   {title.length > 20 && content.length > 100 ? 'OPTIMIZED' : 'NEEDS WORK'}
+                </span>
+              </div>
+              <div className="relative h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="absolute inset-y-0 left-0 bg-[#F29F67] transition-all duration-1000" 
+                  style={{ width: `${Math.min(100, (title.length / 50 * 30) + (content.length / 1000 * 70))}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-bold text-gray-300 uppercase tracking-widest pt-1">
+                  <span>Incomplete</span>
+                  <span>{Math.round(Math.min(100, (title.length / 50 * 30) + (content.length / 1000 * 70)))}%</span>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-end">
+               <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Author Notes</p>
+                  <p className="text-xs text-blue-600/70 font-serif italic">Every story starts with a single word. Keep pushing your boundaries.</p>
+               </div>
+            </div>
+          </aside>
+        )}
+
         {/* Live Preview Section */}
         {showPreview && (
-          <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 hidden sm:block">
+          <div className="flex-1 overflow-y-auto bg-gray-100/30 hidden sm:block">
             <PreviewPanel
               content={content}
               title={title}
@@ -518,25 +600,6 @@ export default function EditorPage() {
               readingTime={(post?.reading_time as number) || 0}
               coverImage={coverImage}
             />
-          </div>
-        )}
-
-        {/* Mobile Preview Toggle Overlay (Optional UX) */}
-        {showPreview && (
-          <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 sm:hidden">
-            <div className="p-4 flex items-center justify-between border-b dark:border-gray-800">
-              <span className="font-semibold">Live Preview</span>
-              <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
-            </div>
-            <div className="h-[calc(100vh-60px)] overflow-y-auto">
-              <PreviewPanel
-                content={content}
-                title={title}
-                tags={(post?.tags as string[]) || []}
-                readingTime={(post?.reading_time as number) || 0}
-                coverImage={coverImage}
-              />
-            </div>
           </div>
         )}
 
@@ -550,4 +613,4 @@ export default function EditorPage() {
       </div>
     </EditorLayout>
   );
-}
+}

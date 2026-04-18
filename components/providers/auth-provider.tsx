@@ -155,11 +155,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   async function signOut() {
-    if (user) {
-      await supabase.auth.signOut();
+    if (user || tempUser) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error('Failed to sign out from Supabase strictly:', err);
+      }
     }
-    // Clear everything
-    sessionStorage.clear();
+    // Clear everything strictly on the client side
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.clear();
+      window.localStorage.clear(); // Sometimes tokens linger in localStorage
+      
+      // Clear cookies that might trap the server in a refresh token loop
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+    }
+
     setUser(null);
     setProfile(null);
     setTempUser(null);
