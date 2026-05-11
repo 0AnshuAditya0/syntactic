@@ -22,6 +22,7 @@ export function CodePlaygroundEmbed({ initialCode, language, readOnly = false }:
   const [executionTime, setExecutionTime] = useState<number | undefined>();
   const [isRunning, setIsRunning] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
+  const [stdin, setStdin] = useState('');
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -40,7 +41,7 @@ export function CodePlaygroundEmbed({ initialCode, language, readOnly = false }:
         const response = await fetch('/api/playground/execute', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, language }),
+          body: JSON.stringify({ code, language, stdin }),
         });
 
         const result = await response.json();
@@ -68,6 +69,7 @@ export function CodePlaygroundEmbed({ initialCode, language, readOnly = false }:
     setOutput('');
     setError(undefined);
     setExecutionTime(undefined);
+    setStdin('');
     setShowOutput(false);
   };
 
@@ -117,6 +119,8 @@ export function CodePlaygroundEmbed({ initialCode, language, readOnly = false }:
             error={error}
             executionTime={executionTime}
             isRunning={isRunning}
+            stdin={stdin}
+            onStdinChange={setStdin}
             onClear={() => setShowOutput(false)}
           />
         </div>
