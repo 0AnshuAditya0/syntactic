@@ -29,7 +29,8 @@ const languageVersions: Record<string, { language: string }> = {
 
 export async function executePiston(
     code: string,
-    language: 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust'
+    language: 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust',
+    stdin?: string
 ): Promise<PistonExecutionResult> {
     const startTime = Date.now();
 
@@ -44,6 +45,7 @@ export async function executePiston(
             body: JSON.stringify({
                 language: config.language,
                 source: code,
+                stdin: stdin || '',
             }),
         });
 

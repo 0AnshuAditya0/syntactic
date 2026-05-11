@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { code, language } = body;
+        const { code, language, stdin } = body;
 
         // Validate input
         if (!code || typeof code !== 'string') {
@@ -40,7 +40,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Execute code via Piston
-        const result = await executePiston(code, language as 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust');
+        const result = await executePiston(
+            code, 
+            language as 'python' | 'java' | 'cpp' | 'c' | 'typescript' | 'go' | 'rust',
+            stdin
+        );
 
         // Log execution (optional)
         if (user) {

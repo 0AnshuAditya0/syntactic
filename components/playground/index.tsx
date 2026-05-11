@@ -25,6 +25,7 @@ export default function Playground() {
   const [error, setError] = useState<string | undefined>();
   const [isRunning, setIsRunning] = useState(false);
   const [isSaveOpen, setIsSaveOpen] = useState(false);
+  const [stdin, setStdin] = useState('');
 
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
@@ -50,7 +51,7 @@ export default function Playground() {
         const response = await fetch('/api/playground/execute', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, language }),
+          body: JSON.stringify({ code, language, stdin }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
@@ -139,6 +140,8 @@ export default function Playground() {
               output={output}
               error={error}
               onClear={handleClear}
+              stdin={stdin}
+              onStdinChange={setStdin}
               isRunning={isRunning}
               theme={editorTheme}
             />
